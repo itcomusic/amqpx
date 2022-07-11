@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+option go_package = "/amqpxproto";
+
+message Gopher {
+    string name = 1;
+}
