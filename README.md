@@ -10,7 +10,7 @@ This is a Go AMQP 0.9.1 client wraps [amqp091-go](https://github.com/rabbitmq/am
 ## Installation
 Go version 1.18+
 ```bash
-go get github.com/itcomusic/amqpx@latest
+go get github.com/itcomusic/amqpx
 ```
 
 ## Usage
@@ -60,16 +60,27 @@ The Prefetch count informs the server will deliver that many messages to consume
 The Concurrency option limits numbers of goroutines of consumer, depends on prefetch count and auto-ack mode.
 ```go
     // prefetch count
-    conn.NewConsumer("foo", amqpx.ConsumerFunc(func(d *amqpx.Delivery) amqpx.Action {
+    _ = conn.NewConsumer("foo", amqpx.ConsumerFunc(func(d *amqpx.Delivery) amqpx.Action {
         fmt.Printf("received message: %s\n", string(d.Body))
         return amqpx.Ack
     }), amqpx.SetPrefetchCount(8))
 
     // limit goroutines
-    conn.NewConsumer("foo", amqpx.ConsumerFunc(func(d *amqpx.Delivery) amqpx.Action {
+	_ = conn.NewConsumer("foo", amqpx.ConsumerFunc(func(d *amqpx.Delivery) amqpx.Action {
         fmt.Printf("received message: %s\n", string(d.Body))
         return amqpx.Ack
     }), amqpx.SetAutoAckMode(), amqpx.SetConcurrency(32))
+```
+
+### Declare queue
+The declare queue, exchange and binding queue.
+```go
+    _ = conn.NewConsumer("foo", amqpx.ConsumerFunc(func(d *amqpx.Delivery) amqpx.Action {
+        fmt.Printf("received message: %s\n", string(d.Body))
+        return amqpx.Ack
+    }), amqpx.DeclareQueue(amqpx.QueueDeclare{AutoDelete: true}),
+        amqpx.DeclareExchange(amqpx.ExchangeDeclare{Name: "exchange_name", Type: amqpx.Direct}),
+        amqpx.BindQueue(amqpx.QueueBind{Exchange: "exchange_name", RoutingKey: []string{"routing_key"}}))
 ```
 
 ### Middleware
