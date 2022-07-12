@@ -117,7 +117,7 @@ func (c *consumer) initChannel() error {
 
 	if c.opts.exchangeDeclare != nil {
 		if err := channel.ExchangeDeclare(c.opts.exchangeDeclare.Name,
-			c.opts.exchangeDeclare.Kind,
+			c.opts.exchangeDeclare.Type,
 			c.opts.exchangeDeclare.Durable,
 			c.opts.exchangeDeclare.AutoDelete,
 			c.opts.exchangeDeclare.Internal,

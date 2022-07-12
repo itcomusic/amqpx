@@ -12,7 +12,7 @@ type QueueDeclare struct {
 // A ExchangeDeclare represents an exchange declaration.
 type ExchangeDeclare struct {
 	Name       string
-	Kind       string
+	Type       string
 	Durable    bool
 	AutoDelete bool
 	Internal   bool
