@@ -29,7 +29,61 @@ func (m *Publishing) amqp091() amqp091.Publishing {
 
 // PersistentMode sets delivery mode as persistent.
 func (m *Publishing) PersistentMode() *Publishing {
-	m.DeliveryMode = Persistent
+	m.Publishing.DeliveryMode = Persistent
+	return m
+}
+
+// SetPriority sets priority.
+func (m *Publishing) SetPriority(priority uint8) *Publishing {
+	m.Publishing.Priority = priority
+	return m
+}
+
+// SetCorrelationID sets correlation id.
+func (m *Publishing) SetCorrelationID(id string) *Publishing {
+	m.Publishing.CorrelationId = id
+	return m
+}
+
+// SetReplyTo sets reply to.
+func (m *Publishing) SetReplyTo(replyTo string) *Publishing {
+	m.Publishing.ReplyTo = replyTo
+	return m
+}
+
+// SetExpiration sets expiration.
+func (m *Publishing) SetExpiration(expiration string) *Publishing {
+	m.Publishing.Expiration = expiration
+	return m
+}
+
+// SetMessageID sets message id.
+func (m *Publishing) SetMessageID(id string) *Publishing {
+	m.Publishing.MessageId = id
+	return m
+}
+
+// SetTimestamp sets timestamp.
+func (m *Publishing) SetTimestamp(timestamp time.Time) *Publishing {
+	m.Publishing.Timestamp = timestamp
+	return m
+}
+
+// SetType sets message type.
+func (m *Publishing) SetType(typ string) *Publishing {
+	m.Publishing.Type = typ
+	return m
+}
+
+// SetUserID sets user id.
+func (m *Publishing) SetUserID(id string) *Publishing {
+	m.Publishing.UserId = id
+	return m
+}
+
+// SetAppID sets application id.
+func (m *Publishing) SetAppID(id string) *Publishing {
+	m.Publishing.AppId = id
 	return m
 }
 
@@ -38,6 +92,7 @@ func (m *Publishing) Context() context.Context {
 	return m.ctx
 }
 
+// WithContext sets context.
 func (m *Publishing) WithContext(ctx context.Context) {
 	m.ctx = ctx
 }
