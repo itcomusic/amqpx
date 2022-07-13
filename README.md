@@ -1,7 +1,7 @@
 # Go RabbitMQ Package
 
-[![go doc](https://pkg.go.dev/badge/github.com/itcomusic/amqpx.svg)](https://pkg.go.dev/github.com/itcomusic/amqpx)
-[![codecov](https://codecov.io/gh/itcomusic/amqpx/branch/main/graph/badge.svg)](https://codecov.io/gh/itcomusic/amqpx)
+[![pkg-img]][pkg-url]
+[![coverage-img]][coverage-url]
 
 This is a Go AMQP 0.9.1 client wraps [amqp091-go](https://github.com/rabbitmq/amqp091-go)
 - Support of the encoding messages
@@ -107,3 +107,8 @@ Predefined support opentelemetry using hooks.
 ```
 ## License
 [MIT License](LICENSE)
+
+[pkg-img]: https://pkg.go.dev/badge/github.com/itcomusic/amqpx.svg
+[pkg-url]: https://pkg.go.dev/github.com/itcomusic/amqpx
+[coverage-img]: https://codecov.io/gh/itcomusic/amqpx/branch/main/graph/badge.svg
+[coverage-url]: https://codecov.io/gh/itcomusic/amqpx
