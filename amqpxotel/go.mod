@@ -5,7 +5,7 @@ go 1.18
 replace github.com/itcomusic/amqpx => ../.
 
 require (
-	github.com/itcomusic/amqpx v0.0.0-00010101000000-000000000000
+	github.com/itcomusic/amqpx v0.0.0-20220714081720-edb651d84bcd
 	go.opentelemetry.io/otel v1.7.0
 	go.opentelemetry.io/otel/trace v1.7.0
 )
