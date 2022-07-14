@@ -1,4 +1,4 @@
-module github.com/itcomusic/amqpx/amqpprotojson
+module github.com/itcomusic/amqpx/amqpxprotojson
 
 go 1.18
 

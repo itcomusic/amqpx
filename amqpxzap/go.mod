@@ -1,4 +1,4 @@
-module github.com/itcomusic/amqpx/amqpzap
+module github.com/itcomusic/amqpx/amqpxzap
 
 go 1.18
 

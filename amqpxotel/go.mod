@@ -1,4 +1,4 @@
-module github.com/itcomusic/amqpx/amqpotel
+module github.com/itcomusic/amqpx/amqpxotel
 
 go 1.18
 
