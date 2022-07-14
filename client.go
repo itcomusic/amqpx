@@ -30,13 +30,7 @@ type Client struct {
 
 // Connect creates a connection.
 func Connect(opts ...ClientOption) (*Client, error) {
-	opt := clientOptions{
-		uri:         defaultURI,
-		config:      defaultConfig,
-		unmarshaler: make(map[string]Unmarshaler),
-		marshaler:   defaultBytesMarshaler,
-	}
-
+	opt := newClientOptions()
 	for _, o := range opts {
 		o(&opt)
 	}

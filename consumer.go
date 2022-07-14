@@ -68,7 +68,7 @@ func (v *HandleValue[T]) Serve(d *Delivery) Action {
 	defer v.pool.Put(value)
 
 	if err := u.Unmarshal(d.Body, value); err != nil {
-		d.logFunc("[ERROR] \"%s\" \"%s\" has an error trying to unmarshal: %w", d.Exchange, d.RoutingKey, err)
+		d.logFunc("[ERROR] \"%s\" \"%s\" has an error trying to unmarshal: %s", d.Exchange, d.RoutingKey, err.Error())
 		return Reject
 	}
 	return v.fn(toContext(d), value)
