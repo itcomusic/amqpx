@@ -8,6 +8,8 @@ import (
 )
 
 func TestPool_DisableSyncPool(t *testing.T) {
+	t.Parallel()
+
 	pool := &pool[string]{}
 	obj1 := pool.Get()
 	v := "Gopher"
@@ -21,21 +23,22 @@ func TestPool_DisableSyncPool(t *testing.T) {
 }
 
 func TestPool_EnableSyncPool(t *testing.T) {
+	t.Parallel()
+
 	type Gopher struct {
 		Name *string
 	}
 
 	pool := &pool[Gopher]{}
 	SetPool[Gopher](func(v *Gopher) { v.Name = nil })(pool)
-	obj1 := pool.Get()
+
+	got1 := pool.Get()
 	v := "Gopher"
-	obj1.Name = &v
+	got1.Name = &v
 
-	pool.Put(obj1)
-	require.Nil(t, obj1.Name)
-	// error using sync pool, out from scope
-	obj1.Name = &v
+	pool.Put(got1)
+	require.Nil(t, got1.Name)
 
-	obj2 := pool.Get()
-	assert.Equal(t, obj1, obj2)
+	got2 := pool.Get()
+	assert.Equal(t, got1, got2)
 }
