@@ -21,7 +21,7 @@ func (*unmarshaler) Unmarshal(b []byte, v any) error {
 	return json.Unmarshal(b, v)
 }
 
-var jsonUnmarshaler = &unmarshaler{}
+var testUnmarshaler = &unmarshaler{}
 
 func TestConsumer_Reconnect(t *testing.T) {
 	t.Parallel()
@@ -185,8 +185,8 @@ func TestHandleValue_Serve(t *testing.T) {
 		assert.Equal(t, &Gopher{Name: "gopher"}, m)
 		return Ack
 	})
-	fn.init(map[string]Unmarshaler{jsonUnmarshaler.ContentType(): jsonUnmarshaler})
-	got := fn.Serve(&Delivery{Delivery: &amqp091.Delivery{Body: []byte(`{"name":"gopher"}`), ContentType: jsonUnmarshaler.ContentType()}, ctx: context.Background()})
+	fn.init(map[string]Unmarshaler{testUnmarshaler.ContentType(): testUnmarshaler})
+	got := fn.Serve(&Delivery{Delivery: &amqp091.Delivery{Body: []byte(`{"name":"gopher"}`), ContentType: testUnmarshaler.ContentType()}, ctx: context.Background()})
 	assert.Equal(t, true, call)
 	assert.Equal(t, Ack, got)
 }

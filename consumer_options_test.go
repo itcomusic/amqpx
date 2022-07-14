@@ -7,7 +7,67 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConsumerOptions_Validate(t *testing.T) {
+func TestConsumerOption(t *testing.T) {
+	t.Parallel()
+
+	queueDeclare := QueueDeclare{
+		Durable:    true,
+		AutoDelete: true,
+		Exclusive:  true,
+		NoWait:     true,
+		Args:       nil,
+	}
+
+	exchangeDeclare := ExchangeDeclare{
+		Name:       "exchange_name_value",
+		Type:       "exchange_type_value",
+		Durable:    true,
+		AutoDelete: true,
+		Internal:   true,
+		NoWait:     true,
+		Args:       nil,
+	}
+
+	queueBind := QueueBind{
+		Exchange:   "exchange_name_value",
+		RoutingKey: []string{"routing_key_value"},
+		NoWait:     true,
+		Args:       nil,
+	}
+
+	got := consumerOptions{}
+	for _, o := range []ConsumerOption{
+		ConsumerTag("consumer_tag_value"),
+		SetAutoAckMode(),
+		SetExclusive(true),
+		SetPrefetchCount(2),
+		SetConcurrency(3),
+		SetUnmarshaler(testUnmarshaler),
+		DeclareQueue(queueDeclare),
+		DeclareExchange(exchangeDeclare),
+		BindQueue(queueBind),
+	} {
+		o(&got)
+	}
+
+	want := consumerOptions{
+		tag: "consumer_tag_value",
+		channel: channelOptions{
+			autoAck:         true,
+			exclusive:       true,
+			prefetchCount:   2,
+			queueDeclare:    &queueDeclare,
+			exchangeDeclare: &exchangeDeclare,
+			queueBind:       &queueBind,
+		},
+		concurrency: 3,
+		hook:        nil,
+		unmarshaler: map[string]Unmarshaler{testUnmarshaler.ContentType(): testUnmarshaler},
+	}
+	assert.Equal(t, want, got)
+}
+
+func TestConsumerOption_Validate(t *testing.T) {
 	t.Parallel()
 
 	t.Run("equals prefetch count", func(t *testing.T) {

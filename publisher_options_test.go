@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPublisherOptions(t *testing.T) {
+func TestPublisherOption(t *testing.T) {
 	t.Parallel()
 
 	got := &publisherOptions{}
@@ -33,7 +33,7 @@ func TestPublisherOptions(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestPublisherOptions_Validate(t *testing.T) {
+func TestPublisherOption_Validate(t *testing.T) {
 	t.Parallel()
 
 	got := (&publisherOptions{}).validate()

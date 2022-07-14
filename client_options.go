@@ -2,8 +2,8 @@ package amqpx
 
 import (
 	"crypto/tls"
-	"log"
-	"os"
+	"strconv"
+	"strings"
 
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -27,6 +27,15 @@ type clientOptions struct {
 	err    error
 }
 
+func newClientOptions() clientOptions {
+	return clientOptions{
+		uri:         defaultURI,
+		config:      defaultConfig,
+		unmarshaler: make(map[string]Unmarshaler),
+		marshaler:   defaultBytesMarshaler,
+	}
+}
+
 // ApplyURI sets amqp URI.
 func ApplyURI(s string) ClientOption {
 	return func(o *clientOptions) {
@@ -47,10 +56,15 @@ func SetConfig(c Config) ClientOption {
 }
 
 // SetHost sets host and port.
-func SetHost(s string, i int) ClientOption {
+func SetHost(h string) ClientOption {
 	return func(o *clientOptions) {
-		o.uri.Host = s
-		o.uri.Port = i
+		o.uri.Host = h
+		hp := strings.Split(h, ":")
+		if p, err := strconv.Atoi(hp[len(hp)-1]); err == nil {
+			o.uri.Host = strings.Join(hp[:len(hp)-1], ":")
+			o.uri.Port = p
+			return
+		}
 	}
 }
 
@@ -132,10 +146,7 @@ func (c *clientOptions) validate() error {
 	}
 
 	if c.logger == nil {
-		logger := log.New(os.Stderr, "amqpx: ", log.LstdFlags)
-		c.logger = func(format string, args ...any) {
-			logger.Printf(format, args...)
-		}
+		c.logger = defaultLogger
 	}
 
 	if c.dialer == nil {
