@@ -118,7 +118,6 @@ type Publisher[T any] struct {
 // NewPublisher creates a publisher.
 func NewPublisher[T any](c *Client, exchange string, opts ...PublisherOption) *Publisher[T] {
 	opt := &publisherOptions{
-		publish:   publishOptions{},
 		marshaler: c.marshaler,
 		hook:      c.publishHook,
 	}
