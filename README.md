@@ -1,5 +1,6 @@
-# Go RabbitMQ Package
+# RabbitMQ Go Client
 
+[![build-img]][build-url]
 [![pkg-img]][pkg-url]
 [![coverage-img]][coverage-url]
 
@@ -110,6 +111,8 @@ Predefined support opentelemetry using hooks.
 ## License
 [MIT License](LICENSE)
 
+[build-img]: https://github.com/itcomusic/amqpx/workflows/build/badge.svg
+[build-url]: https://github.com/itcomusic/amqpx/actions
 [pkg-img]: https://pkg.go.dev/badge/github.com/itcomusic/amqpx.svg
 [pkg-url]: https://pkg.go.dev/github.com/itcomusic/amqpx
 [coverage-img]: https://codecov.io/gh/itcomusic/amqpx/branch/main/graph/badge.svg
