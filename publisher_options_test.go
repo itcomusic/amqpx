@@ -13,10 +13,9 @@ func TestPublisherOption(t *testing.T) {
 	for _, o := range []PublisherOption{
 		SetConfirmMode(),
 		SetMarshaler(defaultBytesMarshaler),
-		WithPublishOptions(
-			SetRoutingKey("key"),
-			SetMandatory(true),
-			SetImmediate(true)),
+		UseRoutingKey("key"),
+		UseMandatory(true),
+		UseImmediate(true),
 	} {
 		o(got)
 	}

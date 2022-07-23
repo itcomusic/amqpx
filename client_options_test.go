@@ -15,7 +15,7 @@ func TestClientOption(t *testing.T) {
 		SetHost("host_value:8080"),
 		SetAuth("username_value", "pass_value"),
 		SetTLSConfig(&tls.Config{InsecureSkipVerify: true}),
-		IsTLS(),
+		IsTLS(true),
 		UseUnmarshaler(testUnmarshaler),
 		UseMarshaler(defaultBytesMarshaler),
 	} {

@@ -43,16 +43,38 @@ func SetMarshaler(m Marshaler) PublisherOption {
 	}
 }
 
-// WithPublishOptions sets publish options.
-func WithPublishOptions(opts ...PublishOption) PublisherOption {
+// UseRoutingKey sets routing key.
+func UseRoutingKey(s string) PublisherOption {
 	return func(o *publisherOptions) {
-		for _, v := range opts {
-			v(&o.publish)
+		if s != "" {
+			o.publish.key = s
 		}
 	}
 }
 
-// PublishOption is used to configure the publish message.
+// UseMandatory sets mandatory.
+// The default is false.
+//
+// Message can be undeliverable when the mandatory flag is true and no queue is
+// bound that matches the routing key.
+func UseMandatory(b bool) PublisherOption {
+	return func(o *publisherOptions) {
+		o.publish.mandatory = b
+	}
+}
+
+// UseImmediate sets immediate.
+// The default is false.
+//
+// Message can be undeliverable when the immediate flag is true and no
+// consumer on the matched queue is ready to accept the delivery.
+func UseImmediate(b bool) PublisherOption {
+	return func(o *publisherOptions) {
+		o.publish.immediate = b
+	}
+}
+
+// PublishOption is used to configure the publishing message.
 type PublishOption func(*publishOptions)
 
 type publishOptions struct {
