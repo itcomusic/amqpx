@@ -4,6 +4,7 @@
 package amqpx
 
 import (
+	"context"
 	"github.com/rabbitmq/amqp091-go"
 	"sync"
 )
@@ -39,8 +40,8 @@ var _ Channel = &ChannelMock{}
 // 			NotifyReturnFunc: func(c chan amqp091.Return) chan amqp091.Return {
 // 				panic("mock out the NotifyReturn method")
 // 			},
-// 			PublishWithDeferredConfirmFunc: func(exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
-// 				panic("mock out the PublishWithDeferredConfirm method")
+// 			PublishWithDeferredConfirmWithContextFunc: func(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
+// 				panic("mock out the PublishWithDeferredConfirmWithContext method")
 // 			},
 // 			QosFunc: func(prefetchCount int, prefetchSize int, global bool) error {
 // 				panic("mock out the Qos method")
@@ -79,8 +80,8 @@ type ChannelMock struct {
 	// NotifyReturnFunc mocks the NotifyReturn method.
 	NotifyReturnFunc func(c chan amqp091.Return) chan amqp091.Return
 
-	// PublishWithDeferredConfirmFunc mocks the PublishWithDeferredConfirm method.
-	PublishWithDeferredConfirmFunc func(exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error)
+	// PublishWithDeferredConfirmWithContextFunc mocks the PublishWithDeferredConfirmWithContext method.
+	PublishWithDeferredConfirmWithContextFunc func(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error)
 
 	// QosFunc mocks the Qos method.
 	QosFunc func(prefetchCount int, prefetchSize int, global bool) error
@@ -150,8 +151,10 @@ type ChannelMock struct {
 			// C is the c argument value.
 			C chan amqp091.Return
 		}
-		// PublishWithDeferredConfirm holds details about calls to the PublishWithDeferredConfirm method.
-		PublishWithDeferredConfirm []struct {
+		// PublishWithDeferredConfirmWithContext holds details about calls to the PublishWithDeferredConfirmWithContext method.
+		PublishWithDeferredConfirmWithContext []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Exchange is the exchange argument value.
 			Exchange string
 			// Key is the key argument value.
@@ -201,17 +204,17 @@ type ChannelMock struct {
 			Args amqp091.Table
 		}
 	}
-	lockClose                      sync.RWMutex
-	lockConfirm                    sync.RWMutex
-	lockConsume                    sync.RWMutex
-	lockExchangeDeclare            sync.RWMutex
-	lockNotifyCancel               sync.RWMutex
-	lockNotifyClose                sync.RWMutex
-	lockNotifyReturn               sync.RWMutex
-	lockPublishWithDeferredConfirm sync.RWMutex
-	lockQos                        sync.RWMutex
-	lockQueueBind                  sync.RWMutex
-	lockQueueDeclare               sync.RWMutex
+	lockClose                                 sync.RWMutex
+	lockConfirm                               sync.RWMutex
+	lockConsume                               sync.RWMutex
+	lockExchangeDeclare                       sync.RWMutex
+	lockNotifyCancel                          sync.RWMutex
+	lockNotifyClose                           sync.RWMutex
+	lockNotifyReturn                          sync.RWMutex
+	lockPublishWithDeferredConfirmWithContext sync.RWMutex
+	lockQos                                   sync.RWMutex
+	lockQueueBind                             sync.RWMutex
+	lockQueueDeclare                          sync.RWMutex
 }
 
 // Close calls CloseFunc.
@@ -474,34 +477,37 @@ func (mock *ChannelMock) NotifyReturnCalls() []struct {
 	return calls
 }
 
-// PublishWithDeferredConfirm calls PublishWithDeferredConfirmFunc.
-func (mock *ChannelMock) PublishWithDeferredConfirm(exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
-	if mock.PublishWithDeferredConfirmFunc == nil {
-		panic("ChannelMock.PublishWithDeferredConfirmFunc: method is nil but Channel.PublishWithDeferredConfirm was just called")
+// PublishWithDeferredConfirmWithContext calls PublishWithDeferredConfirmWithContextFunc.
+func (mock *ChannelMock) PublishWithDeferredConfirmWithContext(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
+	if mock.PublishWithDeferredConfirmWithContextFunc == nil {
+		panic("ChannelMock.PublishWithDeferredConfirmWithContextFunc: method is nil but Channel.PublishWithDeferredConfirmWithContext was just called")
 	}
 	callInfo := struct {
+		Ctx       context.Context
 		Exchange  string
 		Key       string
 		Mandatory bool
 		Immediate bool
 		Msg       amqp091.Publishing
 	}{
+		Ctx:       ctx,
 		Exchange:  exchange,
 		Key:       key,
 		Mandatory: mandatory,
 		Immediate: immediate,
 		Msg:       msg,
 	}
-	mock.lockPublishWithDeferredConfirm.Lock()
-	mock.calls.PublishWithDeferredConfirm = append(mock.calls.PublishWithDeferredConfirm, callInfo)
-	mock.lockPublishWithDeferredConfirm.Unlock()
-	return mock.PublishWithDeferredConfirmFunc(exchange, key, mandatory, immediate, msg)
+	mock.lockPublishWithDeferredConfirmWithContext.Lock()
+	mock.calls.PublishWithDeferredConfirmWithContext = append(mock.calls.PublishWithDeferredConfirmWithContext, callInfo)
+	mock.lockPublishWithDeferredConfirmWithContext.Unlock()
+	return mock.PublishWithDeferredConfirmWithContextFunc(ctx, exchange, key, mandatory, immediate, msg)
 }
 
-// PublishWithDeferredConfirmCalls gets all the calls that were made to PublishWithDeferredConfirm.
+// PublishWithDeferredConfirmWithContextCalls gets all the calls that were made to PublishWithDeferredConfirmWithContext.
 // Check the length with:
-//     len(mockedChannel.PublishWithDeferredConfirmCalls())
-func (mock *ChannelMock) PublishWithDeferredConfirmCalls() []struct {
+//     len(mockedChannel.PublishWithDeferredConfirmWithContextCalls())
+func (mock *ChannelMock) PublishWithDeferredConfirmWithContextCalls() []struct {
+	Ctx       context.Context
 	Exchange  string
 	Key       string
 	Mandatory bool
@@ -509,15 +515,16 @@ func (mock *ChannelMock) PublishWithDeferredConfirmCalls() []struct {
 	Msg       amqp091.Publishing
 } {
 	var calls []struct {
+		Ctx       context.Context
 		Exchange  string
 		Key       string
 		Mandatory bool
 		Immediate bool
 		Msg       amqp091.Publishing
 	}
-	mock.lockPublishWithDeferredConfirm.RLock()
-	calls = mock.calls.PublishWithDeferredConfirm
-	mock.lockPublishWithDeferredConfirm.RUnlock()
+	mock.lockPublishWithDeferredConfirmWithContext.RLock()
+	calls = mock.calls.PublishWithDeferredConfirmWithContext
+	mock.lockPublishWithDeferredConfirmWithContext.RUnlock()
 	return calls
 }
 

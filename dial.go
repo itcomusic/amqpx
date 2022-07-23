@@ -34,7 +34,7 @@ type Channel interface {
 	NotifyClose(chan *amqp091.Error) chan *amqp091.Error
 	NotifyCancel(chan string) chan string
 	Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp091.Table) (<-chan amqp091.Delivery, error)
-	PublishWithDeferredConfirm(exchange, key string, mandatory, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error)
+	PublishWithDeferredConfirmWithContext(ctx context.Context, exchange, key string, mandatory, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error)
 	NotifyReturn(c chan amqp091.Return) chan amqp091.Return
 	Close() error
 }

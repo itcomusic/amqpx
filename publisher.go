@@ -94,7 +94,9 @@ func (m *Publishing) Context() context.Context {
 
 // WithContext sets context.
 func (m *Publishing) WithContext(ctx context.Context) {
-	m.ctx = ctx
+	if ctx != nil {
+		m.ctx = ctx
+	}
 }
 
 // A Publisher represents client for sending the messages.
@@ -116,10 +118,10 @@ type Publisher[T any] struct {
 }
 
 // NewPublisher creates a publisher.
-func NewPublisher[T any](c *Client, exchange string, opts ...PublisherOption) *Publisher[T] {
+func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOption) *Publisher[T] {
 	opt := &publisherOptions{
-		marshaler: c.marshaler,
-		hook:      c.publishHook,
+		marshaler: client.marshaler,
+		hook:      client.publishHook,
 	}
 	if _, ok := any(new(T)).(*[]byte); ok {
 		opt.marshaler = defaultBytesMarshaler
@@ -133,7 +135,7 @@ func NewPublisher[T any](c *Client, exchange string, opts ...PublisherOption) *P
 	}
 
 	pub := &Publisher[T]{
-		conn: c.conn,
+		conn: client.conn,
 		// default close channels to reconnect
 		notifyAMQPClose: func() chan *amqp091.Error {
 			ch := make(chan *amqp091.Error)
@@ -149,9 +151,9 @@ func NewPublisher[T any](c *Client, exchange string, opts ...PublisherOption) *P
 		confirm:        opt.confirm,
 		publishOptions: opt.publish,
 		marshaler:      opt.marshaler,
-		logFunc:        c.logger,
+		logFunc:        client.logger,
 	}
-	pub.done, pub.cancel = context.WithCancel(c.done)
+	pub.done, pub.cancel = context.WithCancel(client.done)
 
 	// wrap the end fn with the hook chain
 	pub.fn = pub.publish
@@ -177,7 +179,7 @@ func (p *Publisher[T]) NewPublishing(v T) *Publishing {
 	if err != nil {
 		return &Publishing{err: err}
 	}
-	return &Publishing{Publishing: amqp091.Publishing{Body: b, ContentType: p.marshaler.ContentType(), Headers: make(amqp091.Table)}}
+	return &Publishing{Publishing: amqp091.Publishing{Body: b, ContentType: p.marshaler.ContentType(), Headers: make(amqp091.Table)}, ctx: context.Background()}
 }
 
 // Publish publishes the message.
@@ -203,7 +205,7 @@ func (p *Publisher[T]) publish(m *Publishing) error {
 		return ErrChannelClosed
 	}
 
-	confirm, err := channel.PublishWithDeferredConfirm(p.exchange, m.opts.key, m.opts.mandatory, m.opts.mandatory, m.amqp091())
+	confirm, err := channel.PublishWithDeferredConfirmWithContext(m.ctx, p.exchange, m.opts.key, m.opts.mandatory, m.opts.mandatory, m.amqp091())
 	if err != nil {
 		return fmt.Errorf("amqpx: publish: %w", err)
 	}

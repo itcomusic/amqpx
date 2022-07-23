@@ -61,7 +61,7 @@ func channelMock() *ChannelMock {
 		ConsumeFunc: func(queue string, consumer string, autoAck bool, exclusive bool, noLocal bool, noWait bool, args amqp091.Table) (<-chan amqp091.Delivery, error) {
 			return make(chan amqp091.Delivery), nil
 		},
-		PublishWithDeferredConfirmFunc: func(exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
+		PublishWithDeferredConfirmWithContextFunc: func(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
 			return nil, nil
 		},
 		NotifyCloseFunc: func(err chan *amqp091.Error) chan *amqp091.Error {

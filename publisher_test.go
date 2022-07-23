@@ -46,7 +46,7 @@ func TestPublisher_Publish(t *testing.T) {
 		client, mock := prep(t)
 		defer client.Close()
 
-		mock.Channel.PublishWithDeferredConfirmFunc = func(exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
+		mock.Channel.PublishWithDeferredConfirmWithContextFunc = func(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
 			assert.Equal(t, []byte("hello"), msg.Body)
 			return nil, fmt.Errorf("failed")
 		}
