@@ -83,10 +83,12 @@ func SetTLSConfig(t *tls.Config) ClientOption {
 	}
 }
 
-// SetTLS sets TLS.
-func SetTLS() ClientOption {
+// IsTLS sets TLS.
+func IsTLS(v bool) ClientOption {
 	return func(o *clientOptions) {
-		o.uri.Scheme = "amqps"
+		if v {
+			o.uri.Scheme = "amqps"
+		}
 	}
 }
 

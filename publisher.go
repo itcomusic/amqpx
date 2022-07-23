@@ -240,7 +240,7 @@ func (p *Publisher[T]) initChannel() error {
 	if p.confirm {
 		if err := channel.Confirm(false); err != nil {
 			channel.Close()
-			return fmt.Errorf("channel confirm mode: %w", err)
+			return fmt.Errorf("confirm mode: %w", err)
 		}
 	}
 

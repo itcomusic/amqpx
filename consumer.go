@@ -186,6 +186,7 @@ func (c *consumer) serve() {
 				c.wg.Done()
 				return
 			}
+
 			go c.handleDelivery(&d)
 			continue
 		}
