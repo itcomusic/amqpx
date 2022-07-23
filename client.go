@@ -34,6 +34,7 @@ func Connect(opts ...ClientOption) (*Client, error) {
 	for _, o := range opts {
 		o(&opt)
 	}
+
 	if err := opt.validate(); err != nil {
 		return nil, err
 	}
@@ -100,7 +101,7 @@ func (c *Client) NewConsumer(queue string, fn Consumer, opts ...ConsumerOption) 
 	}
 
 	if err := cons.initChannel(); err != nil {
-		return fmt.Errorf("amqpx: %s", err)
+		return fmt.Errorf("amqpx: %w", err)
 	}
 	go cons.serve()
 	return nil

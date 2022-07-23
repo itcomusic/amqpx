@@ -27,6 +27,7 @@ func (bytesMarshaler) Marshal(v any) ([]byte, error) {
 	}
 	return b, nil
 }
+
 func (bytesMarshaler) ContentType() string {
 	return bytesContentType
 }

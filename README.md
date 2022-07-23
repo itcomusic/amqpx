@@ -31,11 +31,11 @@ func main() {
     defer conn.Close()
 
     // simple publisher
-    pub := amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.WithPublishOptions(amqpx.SetRoutingKey("routing_key")))
+    pub := amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.UseRoutingKey("routing_key"))
     _ = pub.Publish(pub.NewPublishing([]byte("hello")).PersistentMode())
 	
     // simple consumer 
-    _ = conn.NewConsumer("foo", amqpx.ConsumerFunc(func(d *amqpx.Delivery) amqpx.Action {
+    _ = conn.NewConsumer("foo", amqpx.D(func(d *amqpx.Delivery) amqpx.Action {
         fmt.Printf("received message: %s\n", string(d.Body))
         return amqpx.Ack
     }))
@@ -52,7 +52,7 @@ Pretty using struct and avoiding boilerplate marhsal/unmarshal. It is strict com
     _ = pub.Publish(pub.NewPublishing(Gopher{Name: "Rob"}), amqpx.SetRoutingKey("routing_key"))
 
     resetFn := func(v *Gopher) { v.Name = "" } // option using sync.Pool
-    _ = conn.NewConsumer("bar", amqpx.ConsumerMessage(func(ctx context.Context, m *Gopher) amqpx.Action {
+    _ = conn.NewConsumer("bar", amqpx.T(func(ctx context.Context, m *Gopher) amqpx.Action {
         fmt.Printf("user-id: %s, received message: %s\n", amqpx.FromContext(ctx).UserId, m.Name)
         return amqpx.Ack
     }, amqpx.SetPool(resetFn)), amqpx.SetUnmarshaler(amqpxjson.Unmarshaler), amqpx.SetAutoAckMode())
@@ -63,13 +63,13 @@ The Prefetch count informs the server will deliver that many messages to consume
 The Concurrency option limits numbers of goroutines of consumer, depends on prefetch count and auto-ack mode.
 ```go
     // prefetch count
-    _ = conn.NewConsumer("foo", amqpx.ConsumerFunc(func(d *amqpx.Delivery) amqpx.Action {
+    _ = conn.NewConsumer("foo", amqpx.D(func(d *amqpx.Delivery) amqpx.Action {
         fmt.Printf("received message: %s\n", string(d.Body))
         return amqpx.Ack
     }), amqpx.SetPrefetchCount(8))
 
     // limit goroutines
-	_ = conn.NewConsumer("foo", amqpx.ConsumerFunc(func(d *amqpx.Delivery) amqpx.Action {
+	_ = conn.NewConsumer("foo", amqpx.D(func(d *amqpx.Delivery) amqpx.Action {
         fmt.Printf("received message: %s\n", string(d.Body))
         return amqpx.Ack
     }), amqpx.SetAutoAckMode(), amqpx.SetConcurrency(32))
@@ -78,7 +78,7 @@ The Concurrency option limits numbers of goroutines of consumer, depends on pref
 ### Declare queue
 The declare queue, exchange and binding queue.
 ```go
-    _ = conn.NewConsumer("foo", amqpx.ConsumerFunc(func(d *amqpx.Delivery) amqpx.Action {
+    _ = conn.NewConsumer("foo", amqpx.D(func(d *amqpx.Delivery) amqpx.Action {
         fmt.Printf("received message: %s\n", string(d.Body))
         return amqpx.Ack
     }), amqpx.DeclareQueue(amqpx.QueueDeclare{AutoDelete: true}),

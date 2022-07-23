@@ -26,26 +26,25 @@ type Consumer interface {
 	Serve(*Delivery) Action
 }
 
-// ConsumerFunc is func used for consume delivery.
-type ConsumerFunc func(d *Delivery) Action
+// D represents handler of consume amqpx.Delivery.
+type D func(d *Delivery) Action
 
-func (fn ConsumerFunc) init(_ map[string]Unmarshaler) {}
+func (fn D) init(_ map[string]Unmarshaler) {}
 
-func (fn ConsumerFunc) Serve(d *Delivery) Action {
+func (fn D) Serve(d *Delivery) Action {
 	return fn(d)
 }
 
-// HandleValue is represents func and discovers its format and arguments at runtime and perform the
-// correct call, including unmarshal encoded data back into the appropriate struct
-// based on the signature of the fn.
+// HandleValue represents consume message unmarshales bytes into
+// the appropriate struct based on the signature of the func.
 type HandleValue[T any] struct {
 	fn          func(context.Context, *T) Action
 	unmarshaler map[string]Unmarshaler
 	pool        *pool[T]
 }
 
-// ConsumerMessage returns handler value.
-func ConsumerMessage[T any](fn func(ctx context.Context, m *T) Action, opts ...PoolOptions[T]) *HandleValue[T] {
+// T returns handler of consume specific message type.
+func T[T any](fn func(ctx context.Context, m *T) Action, opts ...PoolOptions[T]) *HandleValue[T] {
 	pool := &pool[T]{}
 	for _, o := range opts {
 		o(pool)

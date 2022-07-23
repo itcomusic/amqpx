@@ -17,6 +17,7 @@ type unmarshaler struct{}
 func (*unmarshaler) ContentType() string {
 	return "application/json"
 }
+
 func (*unmarshaler) Unmarshal(b []byte, v any) error {
 	return json.Unmarshal(b, v)
 }
@@ -30,7 +31,7 @@ func TestConsumer_Reconnect(t *testing.T) {
 	defer client.Close()
 	defer time.AfterFunc(defaultTimeout, func() { t.Fatal("deadlock") }).Stop()
 
-	assert.NoError(t, client.NewConsumer("", ConsumerFunc(func(*Delivery) Action { return Ack })))
+	assert.NoError(t, client.NewConsumer("", D(func(*Delivery) Action { return Ack })))
 	done := make(chan bool)
 	mock.Conn.ChannelFunc = func() (Channel, error) {
 		defer close(done)
@@ -53,7 +54,7 @@ func TestClient_NewConsumer(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		got := client.NewConsumer("", ConsumerFunc(func(*Delivery) Action { return Ack }))
+		got := client.NewConsumer("", D(func(*Delivery) Action { return Ack }))
 		assert.EqualError(t, got, "amqpx: create channel: failed")
 	})
 
@@ -67,7 +68,7 @@ func TestClient_NewConsumer(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		got := client.NewConsumer("", ConsumerFunc(func(*Delivery) Action { return Ack }))
+		got := client.NewConsumer("", D(func(*Delivery) Action { return Ack }))
 		assert.EqualError(t, got, "amqpx: consume: failed")
 	})
 
@@ -78,7 +79,7 @@ func TestClient_NewConsumer(t *testing.T) {
 		defer client.Close()
 
 		client.unmarshaler = nil
-		got := client.NewConsumer("", ConsumerFunc(func(*Delivery) Action { return Ack }))
+		got := client.NewConsumer("", D(func(*Delivery) Action { return Ack }))
 		assert.ErrorIs(t, got, ErrUnmarshalerNotFound)
 	})
 }
@@ -163,7 +164,7 @@ func TestConsumer_DeliveryBody(t *testing.T) {
 	}
 
 	done := make(chan bool)
-	got := client.NewConsumer("", ConsumerFunc(func(d *Delivery) Action {
+	got := client.NewConsumer("", D(func(d *Delivery) Action {
 		defer close(done)
 		assert.Equal(t, msg.Body, d.Body)
 		return Ack
@@ -180,7 +181,7 @@ func TestHandleValue_Serve(t *testing.T) {
 	}
 
 	var call bool
-	fn := ConsumerMessage[Gopher](func(ctx context.Context, m *Gopher) Action {
+	fn := T[Gopher](func(ctx context.Context, m *Gopher) Action {
 		call = true
 		assert.Equal(t, &Gopher{Name: "gopher"}, m)
 		return Ack

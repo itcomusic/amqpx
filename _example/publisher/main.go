@@ -17,7 +17,7 @@ func main() {
 
 	// []byte
 	{
-		pub := amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.WithPublishOptions(amqpx.SetRoutingKey("routing_key")))
+		pub := amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.UseRoutingKey("routing_key"))
 		_ = pub.Publish(pub.NewPublishing([]byte("hello")).PersistentMode())
 	}
 
