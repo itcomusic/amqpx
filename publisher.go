@@ -131,7 +131,7 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 	}
 
 	if err := opt.validate(); err != nil {
-		return &Publisher[T]{err: err}
+		return &Publisher[T]{err: PublisherError{Exchange: exchange, RoutingKey: opt.publish.key, Message: err.Error()}}
 	}
 
 	pub := &Publisher[T]{
@@ -184,8 +184,8 @@ func (p *Publisher[T]) NewPublishing(v T) *Publishing {
 
 // Publish publishes the message.
 func (p *Publisher[T]) Publish(m *Publishing, opts ...PublishOption) error {
-	if p.err != nil {
-		return p.err
+	if err := p.err; err != nil {
+		return err
 	}
 
 	m.opts = p.publishOptions
@@ -196,22 +196,22 @@ func (p *Publisher[T]) Publish(m *Publishing, opts ...PublishOption) error {
 }
 
 func (p *Publisher[T]) publish(m *Publishing) error {
-	if m.err != nil {
-		return m.err
+	if err := m.err; err != nil {
+		return p.newPublisherError(m.opts.key, err)
 	}
 
 	channel, ok := p.amqpChannel.Load().(Channel)
 	if !ok {
-		return ErrChannelClosed
+		return p.newPublisherError(m.opts.key, errChannelClosed)
 	}
 
 	confirm, err := channel.PublishWithDeferredConfirmWithContext(m.ctx, p.exchange, m.opts.key, m.opts.mandatory, m.opts.mandatory, m.amqp091())
 	if err != nil {
-		return fmt.Errorf("amqpx: publish: %w", err)
+		return p.newPublisherError(m.opts.key, fmt.Errorf("publish: %w", err))
 	}
 
 	if confirm != nil && !confirm.Wait() {
-		return ErrPublishConfirm
+		return p.newPublisherError(m.opts.key, errPublishConfirm)
 	}
 	return nil
 }
@@ -283,7 +283,7 @@ func (p *Publisher[T]) makeConnect() (exit bool) {
 		}
 
 		if !errors.Is(err, errConnClosed) {
-			p.logFunc("[ERROR] init channel: %s", err)
+			p.logFunc(p.newPublisherError("", err))
 		}
 
 		select {
@@ -297,6 +297,10 @@ func (p *Publisher[T]) makeConnect() (exit bool) {
 
 func (p *Publisher[T]) notifyReturn(channel Channel) {
 	for v := range channel.NotifyReturn(make(chan amqp091.Return, 1)) {
-		p.logFunc("[ERROR] \"%s\" \"%s\" undeliverable message desc: %s (%d)", v.Exchange, v.RoutingKey, v.ReplyText, v.ReplyCode)
+		p.logFunc(p.newPublisherError(v.RoutingKey, fmt.Errorf("undeliverable message desc \"%s\" \"%d\"", v.ReplyText, v.ReplyCode)))
 	}
+}
+
+func (p *Publisher[T]) newPublisherError(routingKey string, err error) PublisherError {
+	return PublisherError{Exchange: p.exchange, RoutingKey: routingKey, Message: err.Error()}
 }

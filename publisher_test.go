@@ -15,9 +15,9 @@ func TestPublisher_Reconnect(t *testing.T) {
 
 	client, mock := prep(t)
 	defer client.Close()
-	defer time.AfterFunc(defaultTimeout, func() { t.Error("deadlock") }).Stop()
+	defer time.AfterFunc(defaultTimeout, func() { panic("deadlock") }).Stop()
 
-	_ = NewPublisher[struct{}](client, "")
+	_ = NewPublisher[struct{}](client, Direct, UseRoutingKey("key"))
 	done := make(chan bool)
 	mock.Conn.ChannelFunc = func() (Channel, error) {
 		defer close(done)
@@ -33,7 +33,7 @@ func TestNewPublisher_BytesMarshaler(t *testing.T) {
 	client, _ := prep(t)
 	defer client.Close()
 
-	pub := NewPublisher[[]byte](client, "")
+	pub := NewPublisher[[]byte](client, Direct, UseRoutingKey("key"))
 	assert.Equal(t, defaultBytesMarshaler, pub.marshaler)
 }
 
@@ -51,19 +51,12 @@ func TestPublisher_Publish(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		pub := NewPublisher[[]byte](client, "")
-		assert.EqualError(t, pub.Publish(pub.NewPublishing([]byte("hello"))), "amqpx: publish: failed")
-	})
+		pub := NewPublisher[[]byte](client, Direct, UseRoutingKey("key"))
+		got := pub.Publish(pub.NewPublishing([]byte("hello")))
 
-	t.Run("marshaler error", func(t *testing.T) {
-		t.Parallel()
-
-		client, _ := prep(t)
-		defer client.Close()
-		client.marshaler = nil
-
-		pub := NewPublisher[struct{}](client, "")
-		assert.ErrorIs(t, pub.Publish(pub.NewPublishing(struct{}{})), ErrMarshalerNotFound)
+		var err PublisherError
+		assert.ErrorAs(t, got, &err)
+		assert.Equal(t, PublisherError{Exchange: Direct, RoutingKey: "key", Message: "publish: failed"}, err)
 	})
 }
 

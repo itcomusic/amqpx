@@ -2,6 +2,7 @@ package amqpx
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -12,8 +13,21 @@ import (
 type Action int8
 
 const (
+	// Ack is acknowledgement that the client or server has finished work on a delivery.
+	// It removes message from the queue permanently.
 	Ack Action = iota
+
+	// Nack is a negatively acknowledge the delivery of message and need requeue.
+	//
+	// The server to deliver this message to a different consumer.
+	// If it is not possible the message will be dropped or delivered to a server configured dead-letter queue.
+	//
+	// This action must not be used to select or requeue messages the client wishes
+	// not to handle, rather it is to inform the server that the client is incapable
+	// of handling this message at this time.
 	Nack
+
+	// Reject is an explicit not acknowledged and do not requeue.
 	Reject
 )
 
@@ -53,55 +67,43 @@ func (d *Delivery) WithContext(ctx context.Context) {
 	d.ctx = ctx
 }
 
-func (d *Delivery) setStatus(status Action) {
+func (d *Delivery) setStatus(status Action) error {
 	switch status {
 	case Ack:
-		d.ack()
+		return d.ack()
 
 	case Nack:
-		d.nack()
+		return d.nack()
 
 	case Reject:
-		d.reject()
+		return d.reject()
 
 	default:
-		d.logFunc("[ERROR] delivery has unknown ack mode: %d", status)
+		return fmt.Errorf("delivery has unknown ack mode \"%d\"", status)
 	}
 }
 
-// ack is acknowledgement that the client or server has finished work on a delivery.
-// It removes message from the queue permanently.
-func (d *Delivery) ack() {
+func (d *Delivery) ack() error {
 	if err := d.Delivery.Ack(false); err != nil {
-		d.logFunc("[ERROR] ack: %s", err)
-		return
+		return err
 	}
+
 	d.status = Ack
+	return nil
 }
 
-// nack is a negatively acknowledge the delivery of message and need requeue (by default).
-//
-// When requeue is true request the server to deliver this message to a different
-// consumer. If it is not possible or requeue is false, the message will be
-// dropped or delivered to a server configured dead-letter queue.
-//
-// This method must not be used to select or requeue messages the client wishes
-// not to handle, rather it is to inform the server that the client is incapable
-// of handling this message at this time.
-func (d *Delivery) nack() {
+func (d *Delivery) nack() error {
 	if err := d.Delivery.Nack(false, true); err != nil {
-		d.logFunc("[ERROR] nack: %s", err)
-		return
+		return err
 	}
 	d.status = Nack
+	return nil
 }
 
-// reject is an explicit not acknowledged and do not requeue (by default).
-// When requeue is true, queue this message to be delivered to a consumer on a different channel.
-func (d *Delivery) reject() {
+func (d *Delivery) reject() error {
 	if err := d.Delivery.Reject(false); err != nil {
-		d.logFunc("[ERROR] reject: %s", err)
-		return
+		return err
 	}
 	d.status = Reject
+	return nil
 }

@@ -93,4 +93,11 @@ func TestConsumerOption_Validate(t *testing.T) {
 		require.NoError(t, got.validate())
 		assert.Equal(t, defaultLimitConcurrency, got.concurrency)
 	})
+
+	t.Run("unmarshaler", func(t *testing.T) {
+		t.Parallel()
+
+		got := (&consumerOptions{}).validate()
+		assert.ErrorIs(t, got, errUnmarshalerNotFound)
+	})
 }

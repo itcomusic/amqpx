@@ -59,7 +59,11 @@ func (v *HandleValue[T]) init(m map[string]Unmarshaler) {
 func (v *HandleValue[T]) Serve(d *Delivery) Action {
 	u, ok := v.unmarshaler[d.ContentType]
 	if !ok {
-		d.logFunc("[ERROR] \"%s\" \"%s\" content-type \"%s\" of the unmarshal not found", d.Exchange, d.RoutingKey, d.ContentType)
+		d.logFunc(MessageError{
+			Exchange:   d.Exchange,
+			RoutingKey: d.RoutingKey,
+			Message:    fmt.Sprintf("content-type \"%s\" of the unmarshal not found", d.ContentType),
+		})
 		return Reject
 	}
 
@@ -67,7 +71,11 @@ func (v *HandleValue[T]) Serve(d *Delivery) Action {
 	defer v.pool.Put(value)
 
 	if err := u.Unmarshal(d.Body, value); err != nil {
-		d.logFunc("[ERROR] \"%s\" \"%s\" has an error trying to unmarshal: %s", d.Exchange, d.RoutingKey, err.Error())
+		d.logFunc(MessageError{
+			Exchange:   d.Exchange,
+			RoutingKey: d.RoutingKey,
+			Message:    fmt.Sprintf("has an error trying to unmarshal: %s", err),
+		})
 		return Reject
 	}
 	return v.fn(toContext(d), value)
@@ -140,7 +148,7 @@ func (c *consumer) initChannel() error {
 
 	// prefetch
 	if err := channel.Qos(c.opts.prefetchCount, 0, false); err != nil {
-		return fmt.Errorf("set qos: %w", err)
+		return fmt.Errorf("qos: %w", err)
 	}
 
 	// close old channel
@@ -204,7 +212,7 @@ func (c *consumer) makeConnect() (exit bool) {
 		}
 
 		if !errors.Is(err, errConnClosed) {
-			c.logFunc("[ERROR] init channel: %s", err)
+			c.logFunc(c.newConsumerError(err))
 		}
 
 		select {
@@ -222,6 +230,16 @@ func (c *consumer) handleDelivery(d *amqp091.Delivery) {
 
 	delivery := newDelivery(d, c.logFunc)
 	if status := c.fn.Serve(delivery); !c.opts.autoAck {
-		delivery.setStatus(status)
+		if err := delivery.setStatus(status); err != nil {
+			c.logFunc(c.newConsumerError(err))
+		}
+	}
+}
+
+func (c *consumer) newConsumerError(err error) ConsumerError {
+	return ConsumerError{
+		Queue:   c.queue,
+		Tag:     c.tag,
+		Message: err.Error(),
 	}
 }

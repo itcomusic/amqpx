@@ -92,7 +92,7 @@ func (d *defaultDialer) Dial(ctx context.Context) (Connection, error) {
 		if err == nil {
 			return &amqpConn{conn: conn}, nil
 		}
-		d.logFunc("[ERROR] conn: %s", err)
+		d.logFunc(fmt.Errorf("dial conn: %w", err))
 
 		select {
 		case <-ctx.Done():

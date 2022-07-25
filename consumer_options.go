@@ -29,7 +29,7 @@ type channelOptions struct {
 
 func (c *consumerOptions) validate() error {
 	if len(c.unmarshaler) == 0 {
-		return ErrUnmarshalerNotFound
+		return errUnmarshalerNotFound
 	}
 
 	if !c.channel.autoAck {

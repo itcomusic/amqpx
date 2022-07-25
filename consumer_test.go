@@ -29,7 +29,7 @@ func TestConsumer_Reconnect(t *testing.T) {
 
 	client, mock := prep(t)
 	defer client.Close()
-	defer time.AfterFunc(defaultTimeout, func() { t.Fatal("deadlock") }).Stop()
+	defer time.AfterFunc(defaultTimeout, func() { panic("deadlock") }).Stop()
 
 	assert.NoError(t, client.NewConsumer("", D(func(*Delivery) Action { return Ack })))
 	done := make(chan bool)
@@ -54,8 +54,10 @@ func TestClient_NewConsumer(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		got := client.NewConsumer("", D(func(*Delivery) Action { return Ack }))
-		assert.EqualError(t, got, "amqpx: create channel: failed")
+		got := client.NewConsumer("foo", D(func(*Delivery) Action { return Ack }))
+		var err ConsumerError
+		assert.ErrorAs(t, got, &err)
+		assert.Equal(t, ConsumerError{Queue: "foo", Message: "create channel: failed"}, err)
 	})
 
 	t.Run("consume error", func(t *testing.T) {
@@ -68,19 +70,22 @@ func TestClient_NewConsumer(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		got := client.NewConsumer("", D(func(*Delivery) Action { return Ack }))
-		assert.EqualError(t, got, "amqpx: consume: failed")
+		got := client.NewConsumer("foo", D(func(*Delivery) Action { return Ack }))
+		var err ConsumerError
+		assert.ErrorAs(t, got, &err)
+		assert.Equal(t, ConsumerError{Queue: "foo", Message: "consume: failed"}, err)
 	})
 
-	t.Run("unmarshaler error", func(t *testing.T) {
+	t.Run("func nil", func(t *testing.T) {
 		t.Parallel()
 
 		client, _ := prep(t)
 		defer client.Close()
 
-		client.unmarshaler = nil
-		got := client.NewConsumer("", D(func(*Delivery) Action { return Ack }))
-		assert.ErrorIs(t, got, ErrUnmarshalerNotFound)
+		got := client.NewConsumer("foo", nil)
+		var err ConsumerError
+		assert.ErrorAs(t, got, &err)
+		assert.Equal(t, ConsumerError{Queue: "foo", Message: errFuncNil.Error()}, err)
 	})
 }
 
@@ -101,7 +106,7 @@ func TestConsumer_AckMode(t *testing.T) {
 				Acknowledger: ackMock,
 			},
 		}
-		d.setStatus(Ack)
+		require.NoError(t, d.setStatus(Ack))
 		assert.Equal(t, 1, len(ackMock.AckCalls()))
 	})
 
@@ -119,7 +124,7 @@ func TestConsumer_AckMode(t *testing.T) {
 				Acknowledger: ackMock,
 			},
 		}
-		d.setStatus(Nack)
+		require.NoError(t, d.setStatus(Nack))
 		assert.Equal(t, 1, len(ackMock.NackCalls()))
 	})
 
@@ -137,7 +142,7 @@ func TestConsumer_AckMode(t *testing.T) {
 				Acknowledger: ackMock,
 			},
 		}
-		d.setStatus(Reject)
+		require.NoError(t, d.setStatus(Reject))
 		assert.Equal(t, 1, len(ackMock.RejectCalls()))
 	})
 }
@@ -147,7 +152,7 @@ func TestConsumer_DeliveryBody(t *testing.T) {
 
 	client, mock := prep(t)
 	defer client.Close()
-	defer time.AfterFunc(defaultTimeout, func() { t.Error("deadlock") }).Stop()
+	defer time.AfterFunc(defaultTimeout, func() { panic("deadlock") }).Stop()
 
 	msg := amqp091.Delivery{
 		Body: []byte("hello"),

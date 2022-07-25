@@ -8,14 +8,14 @@ import (
 )
 
 var (
-	ErrClientOptionsMissing = fmt.Errorf("amqpx: client options are missing")
-	ErrChannelClosed        = fmt.Errorf("amqpx: channel/connection is not open")
-	ErrPublishConfirm       = fmt.Errorf("amqpx: publish has not confirmation")
-	ErrUnmarshalerNotFound  = fmt.Errorf("amqpx: unmarshaler not found")
-	ErrMarshalerNotFound    = fmt.Errorf("amqpx: marshaler not found")
+	errChannelClosed       = fmt.Errorf("channel/connection is not open")
+	errPublishConfirm      = fmt.Errorf("publish has not confirmation")
+	errUnmarshalerNotFound = fmt.Errorf("unmarshaler not found")
+	errMarshalerNotFound   = fmt.Errorf("marshaler not found")
+	errRoutingKeyEmpty     = fmt.Errorf("routing-key is empty")
 
-	errConnClosed = fmt.Errorf("amqpx: connection closed")
-	errFuncNil    = fmt.Errorf("amqpx: consumer func nil")
+	errConnClosed = fmt.Errorf("connection closed")
+	errFuncNil    = fmt.Errorf("consumer func nil")
 )
 
 // The delivery mode of messages is unrelated to the durability of the queues they reside on.

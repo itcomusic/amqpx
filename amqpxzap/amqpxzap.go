@@ -9,7 +9,7 @@ import (
 
 // S returns amqpx.LogFunc that writes to the zap logger at info-level.
 func S(l *zap.SugaredLogger) amqpx.LogFunc {
-	return func(f string, v ...any) {
-		l.Infof(f, v...)
+	return func(err error) {
+		l.Errorw("amqpx", "error", err)
 	}
 }

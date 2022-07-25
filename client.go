@@ -2,7 +2,6 @@ package amqpx
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -65,7 +64,7 @@ func Connect(opts ...ClientOption) (*Client, error) {
 // NewConsumer creates a consumer.
 func (c *Client) NewConsumer(queue string, fn Consumer, opts ...ConsumerOption) error {
 	if fn == nil {
-		return errFuncNil
+		return ConsumerError{Queue: queue, Message: errFuncNil.Error()}
 	}
 
 	opt := consumerOptions{
@@ -101,7 +100,7 @@ func (c *Client) NewConsumer(queue string, fn Consumer, opts ...ConsumerOption) 
 	}
 
 	if err := cons.initChannel(); err != nil {
-		return fmt.Errorf("amqpx: %w", err)
+		return cons.newConsumerError(err)
 	}
 	go cons.serve()
 	return nil

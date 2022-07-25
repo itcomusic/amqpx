@@ -18,3 +18,12 @@ func TestMarshaler_Marshal(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, `{"name":"gopher"}`, string(got))
 }
+
+func TestMarshaler_Unmarshal(t *testing.T) {
+	t.Parallel()
+
+	type Gopher struct {
+		Name string `json:"name"`
+	}
+	require.NoError(t, Unmarshaler.Unmarshal([]byte(`{"name":"gopher"}`), &Gopher{}))
+}

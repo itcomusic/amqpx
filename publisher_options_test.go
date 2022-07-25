@@ -35,6 +35,17 @@ func TestPublisherOption(t *testing.T) {
 func TestPublisherOption_Validate(t *testing.T) {
 	t.Parallel()
 
-	got := (&publisherOptions{}).validate()
-	assert.ErrorIs(t, got, ErrMarshalerNotFound)
+	t.Run("marshaler", func(t *testing.T) {
+		t.Parallel()
+
+		got := (&publisherOptions{}).validate()
+		assert.ErrorIs(t, got, errMarshalerNotFound)
+	})
+
+	t.Run("routing-key", func(t *testing.T) {
+		t.Parallel()
+
+		got := (&publisherOptions{marshaler: defaultBytesMarshaler}).validate()
+		assert.ErrorIs(t, got, errRoutingKeyEmpty)
+	})
 }

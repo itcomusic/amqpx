@@ -12,7 +12,11 @@ type publisherOptions struct {
 
 func (p *publisherOptions) validate() error {
 	if p.marshaler == nil {
-		return ErrMarshalerNotFound
+		return errMarshalerNotFound
+	}
+
+	if p.publish.key == "" {
+		return errRoutingKeyEmpty
 	}
 	return nil
 }

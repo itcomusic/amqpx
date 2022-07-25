@@ -29,7 +29,6 @@ func (*marshaler) Marshal(v any) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return b, nil
 }
 
