@@ -62,11 +62,7 @@ func Connect(opts ...ClientOption) (*Client, error) {
 }
 
 // NewConsumer creates a consumer.
-func (c *Client) NewConsumer(queue string, fn Consumer, opts ...ConsumerOption) error {
-	if fn == nil {
-		return ConsumerError{Queue: queue, Message: errFuncNil.Error()}
-	}
-
+func (c *Client) NewConsumer(queue string, fn Consume, opts ...ConsumerOption) error {
 	opt := consumerOptions{
 		hook:        c.consumeHook,
 		unmarshaler: c.unmarshaler,
@@ -74,8 +70,9 @@ func (c *Client) NewConsumer(queue string, fn Consumer, opts ...ConsumerOption) 
 	for _, o := range opts {
 		o(&opt)
 	}
-	if err := opt.validate(); err != nil {
-		return err
+
+	if err := opt.validate(fn); err != nil {
+		return ConsumerError{Queue: queue, Message: err.Error()}
 	}
 
 	fn.init(opt.unmarshaler)

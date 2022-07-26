@@ -27,8 +27,12 @@ type channelOptions struct {
 	queueBind       *QueueBind
 }
 
-func (c *consumerOptions) validate() error {
-	if len(c.unmarshaler) == 0 {
+func (c *consumerOptions) validate(fn Consume) error {
+	if fn == nil {
+		return errFuncNil
+	}
+
+	if _, ok := fn.(D); !ok && len(c.unmarshaler) == 0 {
 		return errUnmarshalerNotFound
 	}
 

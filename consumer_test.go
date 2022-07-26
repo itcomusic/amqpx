@@ -75,18 +75,6 @@ func TestClient_NewConsumer(t *testing.T) {
 		assert.ErrorAs(t, got, &err)
 		assert.Equal(t, ConsumerError{Queue: "foo", Message: "consume: failed"}, err)
 	})
-
-	t.Run("func nil", func(t *testing.T) {
-		t.Parallel()
-
-		client, _ := prep(t)
-		defer client.Close()
-
-		got := client.NewConsumer("foo", nil)
-		var err ConsumerError
-		assert.ErrorAs(t, got, &err)
-		assert.Equal(t, ConsumerError{Queue: "foo", Message: errFuncNil.Error()}, err)
-	})
 }
 
 func TestConsumer_AckMode(t *testing.T) {

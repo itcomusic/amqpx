@@ -70,11 +70,12 @@ func TestConsumerOption(t *testing.T) {
 func TestConsumerOption_Validate(t *testing.T) {
 	t.Parallel()
 
+	fn := D(func(d *Delivery) Action { return Ack })
 	t.Run("equals prefetch count", func(t *testing.T) {
 		t.Parallel()
 
 		got := consumerOptions{channel: channelOptions{prefetchCount: 2}, unmarshaler: map[string]Unmarshaler{"any": nil}}
-		require.NoError(t, got.validate())
+		require.NoError(t, got.validate(fn))
 		assert.Equal(t, 2, got.concurrency)
 	})
 
@@ -82,7 +83,7 @@ func TestConsumerOption_Validate(t *testing.T) {
 		t.Parallel()
 
 		got := consumerOptions{channel: channelOptions{autoAck: true}, concurrency: 2, unmarshaler: map[string]Unmarshaler{"any": nil}}
-		require.NoError(t, got.validate())
+		require.NoError(t, got.validate(fn))
 		assert.Equal(t, 2, got.concurrency)
 	})
 
@@ -90,14 +91,21 @@ func TestConsumerOption_Validate(t *testing.T) {
 		t.Parallel()
 
 		got := consumerOptions{unmarshaler: map[string]Unmarshaler{"any": nil}}
-		require.NoError(t, got.validate())
+		require.NoError(t, got.validate(fn))
 		assert.Equal(t, defaultLimitConcurrency, got.concurrency)
 	})
 
-	t.Run("unmarshaler", func(t *testing.T) {
+	t.Run("ignore unmarshaler error", func(t *testing.T) {
 		t.Parallel()
 
-		got := (&consumerOptions{}).validate()
-		assert.ErrorIs(t, got, errUnmarshalerNotFound)
+		got := (&consumerOptions{}).validate(fn)
+		assert.Nil(t, got)
+	})
+
+	t.Run("func nil", func(t *testing.T) {
+		t.Parallel()
+
+		got := (&consumerOptions{}).validate(nil)
+		assert.ErrorIs(t, got, errFuncNil)
 	})
 }

@@ -19,9 +19,9 @@ type Acknowledger interface {
 	Reject(tag uint64, requeue bool) error
 }
 
-type ConsumeHook func(Consumer) Consumer
+type ConsumeHook func(Consume) Consume
 
-type Consumer interface {
+type Consume interface {
 	init(map[string]Unmarshaler)
 	Serve(*Delivery) Action
 }
@@ -93,7 +93,7 @@ type consumer struct {
 
 	limit *semaphore.Weighted
 	wg    *sync.WaitGroup
-	fn    Consumer
+	fn    Consume
 
 	logFunc LogFunc
 	done    context.Context
