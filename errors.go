@@ -12,13 +12,13 @@ func (c ConsumerError) Error() string {
 	return fmt.Sprintf("amqpx: queue \"%s\" consumer-tag \"%s\": %s", c.Queue, c.Tag, c.Message)
 }
 
-type MessageError struct {
+type DeliveryError struct {
 	Exchange   string
 	RoutingKey string
 	Message    string
 }
 
-func (m MessageError) Error() string {
+func (m DeliveryError) Error() string {
 	return fmt.Sprintf("amqpx: exchange \"%s\" routing-key \"%s\": %s", m.Exchange, m.RoutingKey, m.Message)
 }
 

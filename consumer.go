@@ -59,7 +59,7 @@ func (v *HandleValue[T]) init(m map[string]Unmarshaler) {
 func (v *HandleValue[T]) Serve(d *Delivery) Action {
 	u, ok := v.unmarshaler[d.ContentType]
 	if !ok {
-		d.logFunc(MessageError{
+		d.logFunc(DeliveryError{
 			Exchange:   d.Exchange,
 			RoutingKey: d.RoutingKey,
 			Message:    fmt.Sprintf("content-type \"%s\" of the unmarshal not found", d.ContentType),
@@ -71,7 +71,7 @@ func (v *HandleValue[T]) Serve(d *Delivery) Action {
 	defer v.pool.Put(value)
 
 	if err := u.Unmarshal(d.Body, value); err != nil {
-		d.logFunc(MessageError{
+		d.logFunc(DeliveryError{
 			Exchange:   d.Exchange,
 			RoutingKey: d.RoutingKey,
 			Message:    fmt.Sprintf("has an error trying to unmarshal: %s", err),
