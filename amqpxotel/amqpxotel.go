@@ -11,7 +11,7 @@ import (
 
 // Consumer returns consume hook that wraps the next.
 func Consumer(tracer trace.Tracer, operationName string) amqpx.ConsumeHook {
-	return func(next amqpx.Consumer) amqpx.Consumer {
+	return func(next amqpx.Consume) amqpx.Consume {
 		return amqpx.D(func(d *amqpx.Delivery) amqpx.Action {
 			spanContext := otel.GetTextMapPropagator().Extract(d.Context(), table(d.Headers))
 			ctx, span := tracer.Start(d.Context(), operationName, trace.WithSpanKind(trace.SpanKindConsumer), trace.WithLinks(trace.LinkFromContext(spanContext)))
