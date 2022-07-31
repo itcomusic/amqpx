@@ -1,6 +1,8 @@
 package amqpx
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type ConsumerError struct {
 	Queue   string
@@ -13,13 +15,14 @@ func (c ConsumerError) Error() string {
 }
 
 type DeliveryError struct {
-	Exchange   string
-	RoutingKey string
-	Message    string
+	Exchange    string
+	RoutingKey  string
+	ContentType string
+	Message     string
 }
 
 func (m DeliveryError) Error() string {
-	return fmt.Sprintf("amqpx: exchange \"%s\" routing-key \"%s\": %s", m.Exchange, m.RoutingKey, m.Message)
+	return fmt.Sprintf("amqpx: exchange \"%s\" routing-key \"%s\" content-type \"%s\": %s", m.Exchange, m.RoutingKey, m.ContentType, m.Message)
 }
 
 type PublisherError struct {
@@ -30,4 +33,15 @@ type PublisherError struct {
 
 func (p PublisherError) Error() string {
 	return fmt.Sprintf("amqpx: exchange \"%s\" routing-key \"%s\": %s", p.Exchange, p.RoutingKey, p.Message)
+}
+
+type ReturnError struct {
+	Exchange   string
+	RoutingKey string
+	ReplyText  string
+	ReplyCode  uint16
+}
+
+func (r ReturnError) Error() string {
+	return fmt.Sprintf("amqpx: exchange \"%s\" routing-key \"%s\" undeliverable message desc \"%s\" \"%d\"", r.Exchange, r.RoutingKey, r.ReplyText, r.ReplyCode)
 }

@@ -37,7 +37,7 @@ func main() {
 
 		resetFn := func(v *Gopher) { v.Name = "" } // using sync.Pool
 		_ = conn.NewConsumer("bar", amqpx.T(func(ctx context.Context, m *Gopher) amqpx.Action {
-			fmt.Printf("user-id: %s, received message: %s\n", amqpx.FromContext(ctx).UserId, m.Name)
+			fmt.Printf("user-id: %s, received message: %s\n", amqpx.FromContext(ctx).UserID, m.Name)
 			return amqpx.Ack
 		}, amqpx.SetPool(resetFn)), amqpx.SetUnmarshaler(amqpxjson.Unmarshaler), amqpx.SetAutoAckMode()) // individual single unmarshaler
 	}

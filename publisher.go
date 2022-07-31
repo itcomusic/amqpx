@@ -283,7 +283,7 @@ func (p *Publisher[T]) makeConnect() (exit bool) {
 		}
 
 		if !errors.Is(err, errConnClosed) {
-			p.logFunc(p.newPublisherError("", err))
+			p.logFunc(p.newPublisherError(p.publishOptions.key, err))
 		}
 
 		select {
@@ -297,7 +297,7 @@ func (p *Publisher[T]) makeConnect() (exit bool) {
 
 func (p *Publisher[T]) notifyReturn(channel Channel) {
 	for v := range channel.NotifyReturn(make(chan amqp091.Return, 1)) {
-		p.logFunc(p.newPublisherError(v.RoutingKey, fmt.Errorf("undeliverable message desc \"%s\" \"%d\"", v.ReplyText, v.ReplyCode)))
+		p.logFunc(ReturnError{Exchange: v.Exchange, RoutingKey: v.RoutingKey, ReplyText: v.ReplyText, ReplyCode: v.ReplyCode})
 	}
 }
 

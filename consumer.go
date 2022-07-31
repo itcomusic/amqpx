@@ -60,9 +60,10 @@ func (v *HandleValue[T]) Serve(d *Delivery) Action {
 	u, ok := v.unmarshaler[d.ContentType]
 	if !ok {
 		d.logFunc(DeliveryError{
-			Exchange:   d.Exchange,
-			RoutingKey: d.RoutingKey,
-			Message:    fmt.Sprintf("content-type \"%s\" of the unmarshal not found", d.ContentType),
+			Exchange:    d.Exchange,
+			RoutingKey:  d.RoutingKey,
+			ContentType: d.ContentType,
+			Message:     errUnmarshalerNotFound.Error(),
 		})
 		return Reject
 	}
@@ -72,9 +73,10 @@ func (v *HandleValue[T]) Serve(d *Delivery) Action {
 
 	if err := u.Unmarshal(d.Body, value); err != nil {
 		d.logFunc(DeliveryError{
-			Exchange:   d.Exchange,
-			RoutingKey: d.RoutingKey,
-			Message:    fmt.Sprintf("has an error trying to unmarshal: %s", err),
+			Exchange:    d.Exchange,
+			RoutingKey:  d.RoutingKey,
+			ContentType: d.ContentType,
+			Message:     fmt.Sprintf("has an error trying to unmarshal: %s", err),
 		})
 		return Reject
 	}
@@ -86,7 +88,7 @@ type consumer struct {
 	channel          Channel
 	notifyAMQPClose  chan *amqp091.Error
 	notifyAMQPCancel chan string
-	delivery         <-chan amqp091.Delivery
+	delivery         channelDelivery
 	queue            string
 	tag              string
 	opts             channelOptions
@@ -164,16 +166,12 @@ func (c *consumer) initChannel() error {
 
 	c.notifyAMQPClose = c.channel.NotifyClose(make(chan *amqp091.Error, 1))
 	c.notifyAMQPCancel = c.channel.NotifyCancel(make(chan string, 1))
-	c.delivery = d
+	c.delivery.init(c.done, d)
 	return nil
 }
 
 func (c *consumer) serve() {
-	defer func() {
-		if c.channel != nil {
-			c.channel.Close()
-		}
-	}()
+	defer c.close()
 
 	for {
 		select {
@@ -183,18 +181,17 @@ func (c *consumer) serve() {
 		case <-c.notifyAMQPClose:
 		case <-c.notifyAMQPCancel:
 
-		case d, ok := <-c.delivery:
+		case d, ok := <-c.delivery.channel:
 			if !ok {
 				break
 			}
 
 			c.wg.Add(1)
 			if err := c.limit.Acquire(c.done, 1); err != nil {
-				c.wg.Done()
 				return
 			}
 
-			go c.handleDelivery(&d)
+			go c.handleDelivery(c.delivery.ctx, &d)
 			continue
 		}
 
@@ -205,6 +202,8 @@ func (c *consumer) serve() {
 }
 
 func (c *consumer) makeConnect() (exit bool) {
+	c.delivery.cancel()
+
 	for {
 		var err error
 		if err = c.initChannel(); err == nil {
@@ -224,16 +223,21 @@ func (c *consumer) makeConnect() (exit bool) {
 	}
 }
 
-func (c *consumer) handleDelivery(d *amqp091.Delivery) {
+func (c *consumer) handleDelivery(ctx context.Context, d *amqp091.Delivery) {
 	defer c.wg.Done()
 	defer c.limit.Release(1)
 
-	delivery := newDelivery(d, c.logFunc)
+	delivery := newDelivery(ctx, d, c.logFunc)
 	if status := c.fn.Serve(delivery); !c.opts.autoAck {
 		if err := delivery.setStatus(status); err != nil {
 			c.logFunc(c.newConsumerError(err))
 		}
 	}
+}
+
+func (c *consumer) close() {
+	c.delivery.cancel()
+	c.channel.Close()
 }
 
 func (c *consumer) newConsumerError(err error) ConsumerError {
@@ -242,4 +246,18 @@ func (c *consumer) newConsumerError(err error) ConsumerError {
 		Tag:     c.tag,
 		Message: err.Error(),
 	}
+}
+
+type channelDelivery struct {
+	ctx     context.Context
+	cancel  context.CancelFunc
+	channel <-chan amqp091.Delivery
+}
+
+func (c *channelDelivery) init(ctx context.Context, ch <-chan amqp091.Delivery) {
+	if c.cancel != nil {
+		c.cancel()
+	}
+	c.ctx, c.cancel = context.WithCancel(ctx)
+	c.channel = ch
 }

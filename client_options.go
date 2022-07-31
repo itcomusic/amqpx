@@ -92,9 +92,9 @@ func IsTLS(v bool) ClientOption {
 	}
 }
 
-// WithLogger sets logFunc.
+// WithErrLog sets logFunc.
 // The default is stdout.
-func WithLogger(log LogFunc) ClientOption {
+func WithErrLog(log LogFunc) ClientOption {
 	return func(o *clientOptions) {
 		if o.logger != nil {
 			o.logger = log

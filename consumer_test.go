@@ -90,9 +90,7 @@ func TestConsumer_AckMode(t *testing.T) {
 		}
 
 		d := &Delivery{
-			Delivery: &amqp091.Delivery{
-				Acknowledger: ackMock,
-			},
+			acknowledger: ackMock,
 		}
 		require.NoError(t, d.setStatus(Ack))
 		assert.Equal(t, 1, len(ackMock.AckCalls()))
@@ -108,9 +106,7 @@ func TestConsumer_AckMode(t *testing.T) {
 		}
 
 		d := &Delivery{
-			Delivery: &amqp091.Delivery{
-				Acknowledger: ackMock,
-			},
+			acknowledger: ackMock,
 		}
 		require.NoError(t, d.setStatus(Nack))
 		assert.Equal(t, 1, len(ackMock.NackCalls()))
@@ -126,9 +122,7 @@ func TestConsumer_AckMode(t *testing.T) {
 		}
 
 		d := &Delivery{
-			Delivery: &amqp091.Delivery{
-				Acknowledger: ackMock,
-			},
+			acknowledger: ackMock,
 		}
 		require.NoError(t, d.setStatus(Reject))
 		assert.Equal(t, 1, len(ackMock.RejectCalls()))
@@ -180,7 +174,7 @@ func TestHandleValue_Serve(t *testing.T) {
 		return Ack
 	})
 	fn.init(map[string]Unmarshaler{testUnmarshaler.ContentType(): testUnmarshaler})
-	got := fn.Serve(&Delivery{Delivery: &amqp091.Delivery{Body: []byte(`{"name":"gopher"}`), ContentType: testUnmarshaler.ContentType()}, ctx: context.Background()})
+	got := fn.Serve(&Delivery{Body: []byte(`{"name":"gopher"}`), ContentType: testUnmarshaler.ContentType(), ctx: context.Background()})
 	assert.Equal(t, true, call)
 	assert.Equal(t, Ack, got)
 }

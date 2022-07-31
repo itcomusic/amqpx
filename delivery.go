@@ -3,6 +3,7 @@ package amqpx
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -33,22 +34,63 @@ const (
 
 // A Delivery represent the fields for a delivered message.
 type Delivery struct {
-	*amqp091.Delivery
+	Headers Table // Application or header exchange table
 
-	logFunc LogFunc
-	status  Action
-	ctx     context.Context
+	// Properties
+	ContentType     string    // MIME content type
+	ContentEncoding string    // MIME content encoding
+	DeliveryMode    uint8     // queue implementation use - non-persistent (1) or persistent (2)
+	Priority        uint8     // queue implementation use - 0 to 9
+	CorrelationID   string    // application use - correlation identifier
+	ReplyTo         string    // application use - address to reply to (ex: RPC)
+	Expiration      string    // implementation use - message expiration spec
+	MessageID       string    // application use - message identifier
+	Timestamp       time.Time // application use - message timestamp
+	Type            string    // application use - message type name
+	UserID          string    // application use - creating user - should be authenticated user
+	AppID           string    // application use - creating application id
+	ConsumerTag     string
+	DeliveryTag     uint64
+	Redelivered     bool
+	Exchange        string // basic.publish exchange
+	RoutingKey      string // basic.publish routing key
+	Body            []byte
+
+	logFunc      LogFunc
+	status       Action
+	ctx          context.Context
+	acknowledger Acknowledger // the channel from which this delivery arrived
 }
 
-func newDelivery(d *amqp091.Delivery, log LogFunc) *Delivery {
+func newDelivery(ctx context.Context, d *amqp091.Delivery, log LogFunc) *Delivery {
 	if d.Headers == nil {
 		d.Headers = make(amqp091.Table)
 	}
 
 	return &Delivery{
-		Delivery: d,
-		logFunc:  log,
-		ctx:      context.Background(),
+		Headers:         d.Headers,
+		ContentType:     d.ContentType,
+		ContentEncoding: d.ContentEncoding,
+		DeliveryMode:    d.DeliveryMode,
+		Priority:        d.Priority,
+		CorrelationID:   d.CorrelationId,
+		ReplyTo:         d.ReplyTo,
+		Expiration:      d.Expiration,
+		MessageID:       d.MessageId,
+		Timestamp:       d.Timestamp,
+		Type:            d.Type,
+		UserID:          d.UserId,
+		AppID:           d.AppId,
+		ConsumerTag:     d.ConsumerTag,
+		DeliveryTag:     d.DeliveryTag,
+		Redelivered:     d.Redelivered,
+		Exchange:        d.Exchange,
+		RoutingKey:      d.RoutingKey,
+		Body:            d.Body,
+
+		logFunc:      log,
+		ctx:          ctx,
+		acknowledger: d.Acknowledger,
 	}
 }
 
@@ -84,7 +126,7 @@ func (d *Delivery) setStatus(status Action) error {
 }
 
 func (d *Delivery) ack() error {
-	if err := d.Delivery.Ack(false); err != nil {
+	if err := d.acknowledger.Ack(d.DeliveryTag, false); err != nil {
 		return err
 	}
 
@@ -93,7 +135,7 @@ func (d *Delivery) ack() error {
 }
 
 func (d *Delivery) nack() error {
-	if err := d.Delivery.Nack(false, true); err != nil {
+	if err := d.acknowledger.Nack(d.DeliveryTag, false, true); err != nil {
 		return err
 	}
 	d.status = Nack
@@ -101,7 +143,7 @@ func (d *Delivery) nack() error {
 }
 
 func (d *Delivery) reject() error {
-	if err := d.Delivery.Reject(false); err != nil {
+	if err := d.acknowledger.Reject(d.DeliveryTag, false); err != nil {
 		return err
 	}
 	d.status = Reject

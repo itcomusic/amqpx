@@ -72,7 +72,7 @@ func (c *Client) NewConsumer(queue string, fn Consume, opts ...ConsumerOption) e
 	}
 
 	if err := opt.validate(fn); err != nil {
-		return ConsumerError{Queue: queue, Message: err.Error()}
+		return ConsumerError{Queue: queue, Tag: opt.tag, Message: err.Error()}
 	}
 
 	fn.init(opt.unmarshaler)
