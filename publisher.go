@@ -101,13 +101,13 @@ func (m *Publishing) WithContext(ctx context.Context) {
 
 // A Publisher represents client for sending the messages.
 type Publisher[T any] struct {
-	amqpChannel      atomic.Value // Channel
+	amqpChannel      atomic.Pointer[Channel]
 	conn             func() Connection
 	notifyAMQPClose  chan *amqp091.Error
 	notifyAMQPCancel chan string
 	exchange         string
 	confirm          bool
-	fn               PublisherFunc
+	publishExec      PublisherFunc
 
 	marshaler      Marshaler
 	publishOptions publishOptions
@@ -123,6 +123,7 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 		marshaler: client.marshaler,
 		hook:      client.publishHook,
 	}
+
 	if _, ok := any(new(T)).(*[]byte); ok {
 		opt.marshaler = defaultBytesMarshaler
 	}
@@ -131,7 +132,7 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 	}
 
 	if err := opt.validate(); err != nil {
-		return &Publisher[T]{err: PublisherError{Exchange: exchange, RoutingKey: opt.publish.key, Message: err.Error()}}
+		return &Publisher[T]{err: PublishError{Exchange: exchange, RoutingKey: opt.publish.key, Message: err.Error()}}
 	}
 
 	pub := &Publisher[T]{
@@ -156,11 +157,11 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 	pub.done, pub.cancel = context.WithCancel(client.done)
 
 	// wrap the end fn with the hook chain
-	pub.fn = pub.publish
+	pub.publishExec = pub.publish
 	if len(opt.hook) != 0 {
-		pub.fn = opt.hook[len(opt.hook)-1](pub.fn)
+		pub.publishExec = opt.hook[len(opt.hook)-1](pub.publishExec)
 		for i := len(opt.hook) - 2; i >= 0; i-- {
-			pub.fn = opt.hook[i](pub.fn)
+			pub.publishExec = opt.hook[i](pub.publishExec)
 		}
 	}
 
@@ -192,26 +193,26 @@ func (p *Publisher[T]) Publish(m *Publishing, opts ...PublishOption) error {
 	for _, v := range opts {
 		v(&m.opts)
 	}
-	return p.fn(m)
+	return p.publishExec(m)
 }
 
 func (p *Publisher[T]) publish(m *Publishing) error {
 	if err := m.err; err != nil {
-		return p.newPublisherError(m.opts.key, err)
+		return p.newPublishError(m.opts.key, err)
 	}
 
-	channel, ok := p.amqpChannel.Load().(Channel)
-	if !ok {
-		return p.newPublisherError(m.opts.key, errChannelClosed)
+	channel := p.amqpChannel.Load()
+	if channel == nil {
+		return p.newPublishError(m.opts.key, errChannelClosed)
 	}
 
-	confirm, err := channel.PublishWithDeferredConfirmWithContext(m.ctx, p.exchange, m.opts.key, m.opts.mandatory, m.opts.mandatory, m.amqp091())
+	confirm, err := (*channel).PublishWithDeferredConfirmWithContext(m.ctx, p.exchange, m.opts.key, m.opts.mandatory, m.opts.mandatory, m.amqp091())
 	if err != nil {
-		return p.newPublisherError(m.opts.key, fmt.Errorf("publish: %w", err))
+		return p.newPublishError(m.opts.key, err)
 	}
 
 	if confirm != nil && !confirm.Wait() {
-		return p.newPublisherError(m.opts.key, errPublishConfirm)
+		return p.newPublishError(m.opts.key, errPublishConfirm)
 	}
 	return nil
 }
@@ -222,10 +223,10 @@ func (p *Publisher[T]) Close() {
 }
 
 func (p *Publisher[T]) setChannel(channel Channel) {
-	if c, ok := p.amqpChannel.Load().(Channel); ok {
-		c.Close()
+	if c := p.amqpChannel.Load(); c != nil {
+		(*c).Close()
 	}
-	p.amqpChannel.Store(channel)
+	p.amqpChannel.Store(&channel)
 }
 
 func (p *Publisher[T]) initChannel() error {
@@ -255,8 +256,8 @@ func (p *Publisher[T]) initChannel() error {
 
 func (p *Publisher[T]) serve() {
 	defer func() {
-		if channel, ok := p.amqpChannel.Load().(Channel); ok {
-			channel.Close()
+		if channel := p.amqpChannel.Load(); channel != nil {
+			(*channel).Close()
 		}
 	}()
 
@@ -283,7 +284,7 @@ func (p *Publisher[T]) makeConnect() (exit bool) {
 		}
 
 		if !errors.Is(err, errConnClosed) {
-			p.logFunc(p.newPublisherError(p.publishOptions.key, err))
+			p.logFunc(p.newPublishError(p.publishOptions.key, err))
 		}
 
 		select {
@@ -301,6 +302,6 @@ func (p *Publisher[T]) notifyReturn(channel Channel) {
 	}
 }
 
-func (p *Publisher[T]) newPublisherError(routingKey string, err error) PublisherError {
-	return PublisherError{Exchange: p.exchange, RoutingKey: routingKey, Message: err.Error()}
+func (p *Publisher[T]) newPublishError(routingKey string, err error) PublishError {
+	return PublishError{Exchange: p.exchange, RoutingKey: routingKey, Message: err.Error()}
 }

@@ -1,4 +1,4 @@
-// Package amqpxotel provides hooks for opentracing.
+// Package amqpxotel provides supporting opentracing.
 package amqpxotel
 
 import (

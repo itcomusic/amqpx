@@ -25,13 +25,13 @@ func (m DeliveryError) Error() string {
 	return fmt.Sprintf("amqpx: exchange \"%s\" routing-key \"%s\" content-type \"%s\": %s", m.Exchange, m.RoutingKey, m.ContentType, m.Message)
 }
 
-type PublisherError struct {
+type PublishError struct {
 	Exchange   string
 	RoutingKey string
 	Message    string
 }
 
-func (p PublisherError) Error() string {
+func (p PublishError) Error() string {
 	return fmt.Sprintf("amqpx: exchange \"%s\" routing-key \"%s\": %s", p.Exchange, p.RoutingKey, p.Message)
 }
 

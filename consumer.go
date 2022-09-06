@@ -59,7 +59,7 @@ func (v *HandleValue[T]) init(m map[string]Unmarshaler) {
 func (v *HandleValue[T]) Serve(d *Delivery) Action {
 	u, ok := v.unmarshaler[d.ContentType]
 	if !ok {
-		d.logFunc(DeliveryError{
+		d.Log(DeliveryError{
 			Exchange:    d.Exchange,
 			RoutingKey:  d.RoutingKey,
 			ContentType: d.ContentType,
@@ -72,7 +72,7 @@ func (v *HandleValue[T]) Serve(d *Delivery) Action {
 	defer v.pool.Put(value)
 
 	if err := u.Unmarshal(d.Body, value); err != nil {
-		d.logFunc(DeliveryError{
+		d.Log(DeliveryError{
 			Exchange:    d.Exchange,
 			RoutingKey:  d.RoutingKey,
 			ContentType: d.ContentType,

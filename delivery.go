@@ -109,6 +109,10 @@ func (d *Delivery) WithContext(ctx context.Context) {
 	d.ctx = ctx
 }
 
+func (d *Delivery) Log(err error) {
+	d.logFunc(err)
+}
+
 func (d *Delivery) setStatus(status Action) error {
 	switch status {
 	case Ack:
@@ -138,6 +142,7 @@ func (d *Delivery) nack() error {
 	if err := d.acknowledger.Nack(d.DeliveryTag, false, true); err != nil {
 		return err
 	}
+
 	d.status = Nack
 	return nil
 }
@@ -146,6 +151,7 @@ func (d *Delivery) reject() error {
 	if err := d.acknowledger.Reject(d.DeliveryTag, false); err != nil {
 		return err
 	}
+
 	d.status = Reject
 	return nil
 }

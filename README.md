@@ -11,7 +11,7 @@ This is a Go AMQP 0.9.1 client wraps [amqp091-go](https://github.com/rabbitmq/am
 * Middleware for easy integration
 
 ## Installation
-Go version 1.18+
+Go version 1.19+
 ```bash
 go get github.com/itcomusic/amqpx
 ```

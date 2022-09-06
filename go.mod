@@ -1,11 +1,11 @@
 module github.com/itcomusic/amqpx
 
-go 1.18
+go 1.19
 
 require (
 	github.com/rabbitmq/amqp091-go v1.4.0
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
+	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
 )
 
 require (
