@@ -13,25 +13,25 @@ var _ Acknowledger = &AcknowledgerMock{}
 
 // AcknowledgerMock is a mock implementation of Acknowledger.
 //
-// 	func TestSomethingThatUsesAcknowledger(t *testing.T) {
+//	func TestSomethingThatUsesAcknowledger(t *testing.T) {
 //
-// 		// make and configure a mocked Acknowledger
-// 		mockedAcknowledger := &AcknowledgerMock{
-// 			AckFunc: func(tag uint64, multiple bool) error {
-// 				panic("mock out the Ack method")
-// 			},
-// 			NackFunc: func(tag uint64, multiple bool, requeue bool) error {
-// 				panic("mock out the Nack method")
-// 			},
-// 			RejectFunc: func(tag uint64, requeue bool) error {
-// 				panic("mock out the Reject method")
-// 			},
-// 		}
+//		// make and configure a mocked Acknowledger
+//		mockedAcknowledger := &AcknowledgerMock{
+//			AckFunc: func(tag uint64, multiple bool) error {
+//				panic("mock out the Ack method")
+//			},
+//			NackFunc: func(tag uint64, multiple bool, requeue bool) error {
+//				panic("mock out the Nack method")
+//			},
+//			RejectFunc: func(tag uint64, requeue bool) error {
+//				panic("mock out the Reject method")
+//			},
+//		}
 //
-// 		// use mockedAcknowledger in code that requires Acknowledger
-// 		// and then make assertions.
+//		// use mockedAcknowledger in code that requires Acknowledger
+//		// and then make assertions.
 //
-// 	}
+//	}
 type AcknowledgerMock struct {
 	// AckFunc mocks the Ack method.
 	AckFunc func(tag uint64, multiple bool) error
@@ -93,7 +93,8 @@ func (mock *AcknowledgerMock) Ack(tag uint64, multiple bool) error {
 
 // AckCalls gets all the calls that were made to Ack.
 // Check the length with:
-//     len(mockedAcknowledger.AckCalls())
+//
+//	len(mockedAcknowledger.AckCalls())
 func (mock *AcknowledgerMock) AckCalls() []struct {
 	Tag      uint64
 	Multiple bool
@@ -130,7 +131,8 @@ func (mock *AcknowledgerMock) Nack(tag uint64, multiple bool, requeue bool) erro
 
 // NackCalls gets all the calls that were made to Nack.
 // Check the length with:
-//     len(mockedAcknowledger.NackCalls())
+//
+//	len(mockedAcknowledger.NackCalls())
 func (mock *AcknowledgerMock) NackCalls() []struct {
 	Tag      uint64
 	Multiple bool
@@ -167,7 +169,8 @@ func (mock *AcknowledgerMock) Reject(tag uint64, requeue bool) error {
 
 // RejectCalls gets all the calls that were made to Reject.
 // Check the length with:
-//     len(mockedAcknowledger.RejectCalls())
+//
+//	len(mockedAcknowledger.RejectCalls())
 func (mock *AcknowledgerMock) RejectCalls() []struct {
 	Tag     uint64
 	Requeue bool
