@@ -92,6 +92,13 @@ func IsTLS(v bool) ClientOption {
 	}
 }
 
+// SetConnectionName sets client connection name.
+func SetConnectionName(name string) ClientOption {
+	return func(o *clientOptions) {
+		o.config.Properties.SetClientConnectionName(name)
+	}
+}
+
 // WithErrLog sets logFunc.
 // The default is stdout.
 func WithErrLog(log LogFunc) ClientOption {

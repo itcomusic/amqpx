@@ -76,8 +76,9 @@ var defaultURI = amqp091.URI{
 }
 
 var defaultConfig = amqp091.Config{
-	Heartbeat: 10 * time.Second,
-	Locale:    "en_US",
+	Heartbeat:  10 * time.Second,
+	Locale:     "en_US",
+	Properties: amqp091.NewConnectionProperties(),
 }
 
 type defaultDialer struct {

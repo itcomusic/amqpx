@@ -14,6 +14,7 @@ func TestClientOption(t *testing.T) {
 
 	got := newClientOptions()
 	for _, o := range []ClientOption{
+		SetConnectionName("connection_name"),
 		SetHost("host_value:8080"),
 		SetAuth("username_value", "pass_value"),
 		SetTLSConfig(&tls.Config{InsecureSkipVerify: false, MinVersion: tls.VersionTLS12}),
@@ -30,6 +31,7 @@ func TestClientOption(t *testing.T) {
 	want.uri.Username = "username_value"
 	want.uri.Password = "pass_value"
 	want.uri.Scheme = "amqps"
+	want.config.Properties.SetClientConnectionName("connection_name")
 	want.config.TLSClientConfig = &tls.Config{InsecureSkipVerify: false, MinVersion: tls.VersionTLS12}
 	want.unmarshaler[testUnmarshaler.ContentType()] = testUnmarshaler
 	want.marshaler = defaultBytesMarshaler
