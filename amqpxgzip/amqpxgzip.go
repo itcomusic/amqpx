@@ -15,26 +15,26 @@ const headerGZIP = "gzip"
 // Consumer returns consume hook that wraps the next.
 func Consumer() amqpx.ConsumeHook {
 	return func(next amqpx.Consume) amqpx.Consume {
-		return amqpx.D(func(d *amqpx.Delivery) amqpx.Action {
-			if d.ContentEncoding != headerGZIP {
-				return next.Serve(d)
+		return amqpx.D(func(delivery *amqpx.Delivery) amqpx.Action {
+			if delivery.ContentEncoding != headerGZIP {
+				return next.Serve(delivery)
 			}
 
-			r, err := gzip.NewReader(bytes.NewReader(d.Body))
+			r, err := gzip.NewReader(bytes.NewReader(delivery.Body))
 			if err != nil {
-				d.Log(fmt.Errorf("amqpxgzip: init reader: %w", err))
+				delivery.Log(fmt.Errorf("amqpxgzip: init reader: %w", err))
 				return amqpx.Reject
 			}
 			defer r.Close()
 
-			b, err := io.ReadAll(r)
+			body, err := io.ReadAll(r)
 			if err != nil {
-				d.Log(fmt.Errorf("amqpxgzip: read: %w", err))
+				delivery.Log(fmt.Errorf("amqpxgzip: read: %w", err))
 				return amqpx.Reject
 			}
 
-			d.Body = b
-			return next.Serve(d)
+			delivery.Body = body
+			return next.Serve(delivery)
 		})
 	}
 }
@@ -47,7 +47,7 @@ func Publisher(level ...int) amqpx.PublishHook {
 	}
 
 	return func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
-		return func(m *amqpx.Publishing) error {
+		return func(m *amqpx.PublishRequest) error {
 			buf := &bytes.Buffer{}
 			w, err := gzip.NewWriterLevel(buf, compression)
 			if err != nil {

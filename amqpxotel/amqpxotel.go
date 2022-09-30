@@ -25,7 +25,7 @@ func Consumer(tracer trace.Tracer, operationName string) amqpx.ConsumeHook {
 // Publisher returns publish hook that wraps the next.
 func Publisher(tracer trace.Tracer) amqpx.PublishHook {
 	return func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
-		return func(m *amqpx.Publishing) error {
+		return func(m *amqpx.PublishRequest) error {
 			otel.GetTextMapPropagator().Inject(m.Context(), table(m.Headers))
 			return next(m)
 		}

@@ -49,7 +49,7 @@ Pretty using struct and avoiding boilerplate marhsal/unmarshal. It is strict com
         Name string
     }
     pub := amqpx.NewPublisher[Gopher](conn, amqpx.Direct, amqpx.SetMarshaler(amqpxjson.Marshaler))
-    _ = pub.Publish(pub.NewPublishing(Gopher{Name: "Rob"}), amqpx.SetRoutingKey("routing_key"))
+    _ = pub.Publish(amqpx.NewPublishing(Gopher{Name: "Rob"}), amqpx.SetRoutingKey("routing_key"))
 
     resetFn := func(v *Gopher) { v.Name = "" } // option using sync.Pool
     _ = conn.NewConsumer("bar", amqpx.T(func(ctx context.Context, m *Gopher) amqpx.Action {

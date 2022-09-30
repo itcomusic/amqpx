@@ -13,89 +13,101 @@ import (
 type PublishHook func(PublisherFunc) PublisherFunc
 
 // PublisherFunc is func used for publish message.
-type PublisherFunc func(*Publishing) error
+type PublisherFunc func(*PublishRequest) error
 
-// A Publishing represents message sending to the server.
-type Publishing struct {
+// A PublishRequest represents a request to publish a message.
+type PublishRequest struct {
 	amqp091.Publishing
 	ctx  context.Context
-	err  error
 	opts publishOptions
 }
 
-func (m *Publishing) amqp091() amqp091.Publishing {
-	return m.Publishing
+// Context returns context.
+func (m *PublishRequest) Context() context.Context {
+	return m.ctx
+}
+
+// A Publishing represents message sending to the server.
+type Publishing[T any] struct {
+	msg T
+	req *PublishRequest
+}
+
+// NewPublishing creates new publishing.
+func NewPublishing[T any](v T) *Publishing[T] {
+	return &Publishing[T]{
+		msg: v,
+		req: &PublishRequest{
+			Publishing: amqp091.Publishing{Headers: make(amqp091.Table)},
+			ctx:        context.Background(),
+		},
+	}
 }
 
 // PersistentMode sets delivery mode as persistent.
-func (m *Publishing) PersistentMode() *Publishing {
-	m.Publishing.DeliveryMode = Persistent
+func (m *Publishing[T]) PersistentMode() *Publishing[T] {
+	m.req.DeliveryMode = Persistent
 	return m
 }
 
 // SetPriority sets priority.
-func (m *Publishing) SetPriority(priority uint8) *Publishing {
-	m.Publishing.Priority = priority
+func (m *Publishing[T]) SetPriority(priority uint8) *Publishing[T] {
+	m.req.Priority = priority
 	return m
 }
 
 // SetCorrelationID sets correlation id.
-func (m *Publishing) SetCorrelationID(id string) *Publishing {
-	m.Publishing.CorrelationId = id
+func (m *Publishing[T]) SetCorrelationID(id string) *Publishing[T] {
+	m.req.CorrelationId = id
 	return m
 }
 
 // SetReplyTo sets reply to.
-func (m *Publishing) SetReplyTo(replyTo string) *Publishing {
-	m.Publishing.ReplyTo = replyTo
+func (m *Publishing[T]) SetReplyTo(replyTo string) *Publishing[T] {
+	m.req.ReplyTo = replyTo
 	return m
 }
 
 // SetExpiration sets expiration.
-func (m *Publishing) SetExpiration(expiration string) *Publishing {
-	m.Publishing.Expiration = expiration
+func (m *Publishing[T]) SetExpiration(expiration string) *Publishing[T] {
+	m.req.Expiration = expiration
 	return m
 }
 
 // SetMessageID sets message id.
-func (m *Publishing) SetMessageID(id string) *Publishing {
-	m.Publishing.MessageId = id
+func (m *Publishing[T]) SetMessageID(id string) *Publishing[T] {
+	m.req.MessageId = id
 	return m
 }
 
 // SetTimestamp sets timestamp.
-func (m *Publishing) SetTimestamp(timestamp time.Time) *Publishing {
-	m.Publishing.Timestamp = timestamp
+func (m *Publishing[T]) SetTimestamp(timestamp time.Time) *Publishing[T] {
+	m.req.Timestamp = timestamp
 	return m
 }
 
 // SetType sets message type.
-func (m *Publishing) SetType(typ string) *Publishing {
-	m.Publishing.Type = typ
+func (m *Publishing[T]) SetType(typ string) *Publishing[T] {
+	m.req.Type = typ
 	return m
 }
 
 // SetUserID sets user id.
-func (m *Publishing) SetUserID(id string) *Publishing {
-	m.Publishing.UserId = id
+func (m *Publishing[T]) SetUserID(id string) *Publishing[T] {
+	m.req.UserId = id
 	return m
 }
 
 // SetAppID sets application id.
-func (m *Publishing) SetAppID(id string) *Publishing {
-	m.Publishing.AppId = id
+func (m *Publishing[T]) SetAppID(id string) *Publishing[T] {
+	m.req.AppId = id
 	return m
 }
 
-// Context returns context.
-func (m *Publishing) Context() context.Context {
-	return m.ctx
-}
-
 // WithContext sets context.
-func (m *Publishing) WithContext(ctx context.Context) {
+func (m *Publishing[T]) WithContext(ctx context.Context) {
 	if ctx != nil {
-		m.ctx = ctx
+		m.req.ctx = ctx
 	}
 }
 
@@ -170,43 +182,32 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 	return pub
 }
 
-// NewPublishing creates new publishing.
-func (p *Publisher[T]) NewPublishing(v T) *Publishing {
-	if p.err != nil {
-		return &Publishing{}
-	}
-
-	b, err := p.marshaler.Marshal(v)
-	if err != nil {
-		return &Publishing{err: err}
-	}
-	return &Publishing{Publishing: amqp091.Publishing{Body: b, ContentType: p.marshaler.ContentType(), Headers: make(amqp091.Table)}, ctx: context.Background()}
-}
-
 // Publish publishes the message.
-func (p *Publisher[T]) Publish(m *Publishing, opts ...PublishOption) error {
+func (p *Publisher[T]) Publish(m *Publishing[T], opts ...PublishOption) error {
 	if err := p.err; err != nil {
 		return err
 	}
 
-	m.opts = p.publishOptions
+	m.req.opts = p.publishOptions
 	for _, v := range opts {
-		v(&m.opts)
+		v(&m.req.opts)
 	}
-	return p.publishExec(m)
+
+	b, err := p.marshaler.Marshal(m.msg)
+	if err != nil {
+		return p.newPublishError(m.req.opts.key, err)
+	}
+	m.req.Body = b
+	return p.publishExec(m.req)
 }
 
-func (p *Publisher[T]) publish(m *Publishing) error {
-	if err := m.err; err != nil {
-		return p.newPublishError(m.opts.key, err)
-	}
-
+func (p *Publisher[T]) publish(m *PublishRequest) error {
 	channel := p.amqpChannel.Load()
 	if channel == nil {
 		return p.newPublishError(m.opts.key, errChannelClosed)
 	}
 
-	confirm, err := (*channel).PublishWithDeferredConfirmWithContext(m.ctx, p.exchange, m.opts.key, m.opts.mandatory, m.opts.mandatory, m.amqp091())
+	confirm, err := (*channel).PublishWithDeferredConfirmWithContext(m.ctx, p.exchange, m.opts.key, m.opts.mandatory, m.opts.immediate, m.Publishing)
 	if err != nil {
 		return p.newPublishError(m.opts.key, err)
 	}

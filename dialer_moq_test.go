@@ -14,19 +14,19 @@ var _ dialer = &dialerMock{}
 
 // dialerMock is a mock implementation of dialer.
 //
-//	func TestSomethingThatUsesdialer(t *testing.T) {
+// 	func TestSomethingThatUsesdialer(t *testing.T) {
 //
-//		// make and configure a mocked dialer
-//		mockeddialer := &dialerMock{
-//			DialFunc: func(contextMoqParam context.Context) (Connection, error) {
-//				panic("mock out the Dial method")
-//			},
-//		}
+// 		// make and configure a mocked dialer
+// 		mockeddialer := &dialerMock{
+// 			DialFunc: func(contextMoqParam context.Context) (Connection, error) {
+// 				panic("mock out the Dial method")
+// 			},
+// 		}
 //
-//		// use mockeddialer in code that requires dialer
-//		// and then make assertions.
+// 		// use mockeddialer in code that requires dialer
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type dialerMock struct {
 	// DialFunc mocks the Dial method.
 	DialFunc func(contextMoqParam context.Context) (Connection, error)
@@ -60,8 +60,7 @@ func (mock *dialerMock) Dial(contextMoqParam context.Context) (Connection, error
 
 // DialCalls gets all the calls that were made to Dial.
 // Check the length with:
-//
-//	len(mockeddialer.DialCalls())
+//     len(mockeddialer.DialCalls())
 func (mock *dialerMock) DialCalls() []struct {
 	ContextMoqParam context.Context
 } {

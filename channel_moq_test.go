@@ -15,49 +15,49 @@ var _ Channel = &ChannelMock{}
 
 // ChannelMock is a mock implementation of Channel.
 //
-//	func TestSomethingThatUsesChannel(t *testing.T) {
+// 	func TestSomethingThatUsesChannel(t *testing.T) {
 //
-//		// make and configure a mocked Channel
-//		mockedChannel := &ChannelMock{
-//			CloseFunc: func() error {
-//				panic("mock out the Close method")
-//			},
-//			ConfirmFunc: func(noWait bool) error {
-//				panic("mock out the Confirm method")
-//			},
-//			ConsumeFunc: func(queue string, consumer string, autoAck bool, exclusive bool, noLocal bool, noWait bool, args amqp091.Table) (<-chan amqp091.Delivery, error) {
-//				panic("mock out the Consume method")
-//			},
-//			ExchangeDeclareFunc: func(name string, kind string, durable bool, autoDelete bool, internal bool, noWait bool, args amqp091.Table) error {
-//				panic("mock out the ExchangeDeclare method")
-//			},
-//			NotifyCancelFunc: func(stringCh chan string) chan string {
-//				panic("mock out the NotifyCancel method")
-//			},
-//			NotifyCloseFunc: func(errorCh chan *amqp091.Error) chan *amqp091.Error {
-//				panic("mock out the NotifyClose method")
-//			},
-//			NotifyReturnFunc: func(c chan amqp091.Return) chan amqp091.Return {
-//				panic("mock out the NotifyReturn method")
-//			},
-//			PublishWithDeferredConfirmWithContextFunc: func(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
-//				panic("mock out the PublishWithDeferredConfirmWithContext method")
-//			},
-//			QosFunc: func(prefetchCount int, prefetchSize int, global bool) error {
-//				panic("mock out the Qos method")
-//			},
-//			QueueBindFunc: func(name string, key string, exchange string, noWait bool, args amqp091.Table) error {
-//				panic("mock out the QueueBind method")
-//			},
-//			QueueDeclareFunc: func(name string, durable bool, autoDelete bool, exclusive bool, noWait bool, args amqp091.Table) (amqp091.Queue, error) {
-//				panic("mock out the QueueDeclare method")
-//			},
-//		}
+// 		// make and configure a mocked Channel
+// 		mockedChannel := &ChannelMock{
+// 			CloseFunc: func() error {
+// 				panic("mock out the Close method")
+// 			},
+// 			ConfirmFunc: func(noWait bool) error {
+// 				panic("mock out the Confirm method")
+// 			},
+// 			ConsumeFunc: func(queue string, consumer string, autoAck bool, exclusive bool, noLocal bool, noWait bool, args amqp091.Table) (<-chan amqp091.Delivery, error) {
+// 				panic("mock out the Consume method")
+// 			},
+// 			ExchangeDeclareFunc: func(name string, kind string, durable bool, autoDelete bool, internal bool, noWait bool, args amqp091.Table) error {
+// 				panic("mock out the ExchangeDeclare method")
+// 			},
+// 			NotifyCancelFunc: func(stringCh chan string) chan string {
+// 				panic("mock out the NotifyCancel method")
+// 			},
+// 			NotifyCloseFunc: func(errorCh chan *amqp091.Error) chan *amqp091.Error {
+// 				panic("mock out the NotifyClose method")
+// 			},
+// 			NotifyReturnFunc: func(c chan amqp091.Return) chan amqp091.Return {
+// 				panic("mock out the NotifyReturn method")
+// 			},
+// 			PublishWithDeferredConfirmWithContextFunc: func(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
+// 				panic("mock out the PublishWithDeferredConfirmWithContext method")
+// 			},
+// 			QosFunc: func(prefetchCount int, prefetchSize int, global bool) error {
+// 				panic("mock out the Qos method")
+// 			},
+// 			QueueBindFunc: func(name string, key string, exchange string, noWait bool, args amqp091.Table) error {
+// 				panic("mock out the QueueBind method")
+// 			},
+// 			QueueDeclareFunc: func(name string, durable bool, autoDelete bool, exclusive bool, noWait bool, args amqp091.Table) (amqp091.Queue, error) {
+// 				panic("mock out the QueueDeclare method")
+// 			},
+// 		}
 //
-//		// use mockedChannel in code that requires Channel
-//		// and then make assertions.
+// 		// use mockedChannel in code that requires Channel
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type ChannelMock struct {
 	// CloseFunc mocks the Close method.
 	CloseFunc func() error
@@ -232,8 +232,7 @@ func (mock *ChannelMock) Close() error {
 
 // CloseCalls gets all the calls that were made to Close.
 // Check the length with:
-//
-//	len(mockedChannel.CloseCalls())
+//     len(mockedChannel.CloseCalls())
 func (mock *ChannelMock) CloseCalls() []struct {
 } {
 	var calls []struct {
@@ -262,8 +261,7 @@ func (mock *ChannelMock) Confirm(noWait bool) error {
 
 // ConfirmCalls gets all the calls that were made to Confirm.
 // Check the length with:
-//
-//	len(mockedChannel.ConfirmCalls())
+//     len(mockedChannel.ConfirmCalls())
 func (mock *ChannelMock) ConfirmCalls() []struct {
 	NoWait bool
 } {
@@ -306,8 +304,7 @@ func (mock *ChannelMock) Consume(queue string, consumer string, autoAck bool, ex
 
 // ConsumeCalls gets all the calls that were made to Consume.
 // Check the length with:
-//
-//	len(mockedChannel.ConsumeCalls())
+//     len(mockedChannel.ConsumeCalls())
 func (mock *ChannelMock) ConsumeCalls() []struct {
 	Queue     string
 	Consumer  string
@@ -362,8 +359,7 @@ func (mock *ChannelMock) ExchangeDeclare(name string, kind string, durable bool,
 
 // ExchangeDeclareCalls gets all the calls that were made to ExchangeDeclare.
 // Check the length with:
-//
-//	len(mockedChannel.ExchangeDeclareCalls())
+//     len(mockedChannel.ExchangeDeclareCalls())
 func (mock *ChannelMock) ExchangeDeclareCalls() []struct {
 	Name       string
 	Kind       string
@@ -406,8 +402,7 @@ func (mock *ChannelMock) NotifyCancel(stringCh chan string) chan string {
 
 // NotifyCancelCalls gets all the calls that were made to NotifyCancel.
 // Check the length with:
-//
-//	len(mockedChannel.NotifyCancelCalls())
+//     len(mockedChannel.NotifyCancelCalls())
 func (mock *ChannelMock) NotifyCancelCalls() []struct {
 	StringCh chan string
 } {
@@ -438,8 +433,7 @@ func (mock *ChannelMock) NotifyClose(errorCh chan *amqp091.Error) chan *amqp091.
 
 // NotifyCloseCalls gets all the calls that were made to NotifyClose.
 // Check the length with:
-//
-//	len(mockedChannel.NotifyCloseCalls())
+//     len(mockedChannel.NotifyCloseCalls())
 func (mock *ChannelMock) NotifyCloseCalls() []struct {
 	ErrorCh chan *amqp091.Error
 } {
@@ -470,8 +464,7 @@ func (mock *ChannelMock) NotifyReturn(c chan amqp091.Return) chan amqp091.Return
 
 // NotifyReturnCalls gets all the calls that were made to NotifyReturn.
 // Check the length with:
-//
-//	len(mockedChannel.NotifyReturnCalls())
+//     len(mockedChannel.NotifyReturnCalls())
 func (mock *ChannelMock) NotifyReturnCalls() []struct {
 	C chan amqp091.Return
 } {
@@ -512,8 +505,7 @@ func (mock *ChannelMock) PublishWithDeferredConfirmWithContext(ctx context.Conte
 
 // PublishWithDeferredConfirmWithContextCalls gets all the calls that were made to PublishWithDeferredConfirmWithContext.
 // Check the length with:
-//
-//	len(mockedChannel.PublishWithDeferredConfirmWithContextCalls())
+//     len(mockedChannel.PublishWithDeferredConfirmWithContextCalls())
 func (mock *ChannelMock) PublishWithDeferredConfirmWithContextCalls() []struct {
 	Ctx       context.Context
 	Exchange  string
@@ -558,8 +550,7 @@ func (mock *ChannelMock) Qos(prefetchCount int, prefetchSize int, global bool) e
 
 // QosCalls gets all the calls that were made to Qos.
 // Check the length with:
-//
-//	len(mockedChannel.QosCalls())
+//     len(mockedChannel.QosCalls())
 func (mock *ChannelMock) QosCalls() []struct {
 	PrefetchCount int
 	PrefetchSize  int
@@ -602,8 +593,7 @@ func (mock *ChannelMock) QueueBind(name string, key string, exchange string, noW
 
 // QueueBindCalls gets all the calls that were made to QueueBind.
 // Check the length with:
-//
-//	len(mockedChannel.QueueBindCalls())
+//     len(mockedChannel.QueueBindCalls())
 func (mock *ChannelMock) QueueBindCalls() []struct {
 	Name     string
 	Key      string
@@ -652,8 +642,7 @@ func (mock *ChannelMock) QueueDeclare(name string, durable bool, autoDelete bool
 
 // QueueDeclareCalls gets all the calls that were made to QueueDeclare.
 // Check the length with:
-//
-//	len(mockedChannel.QueueDeclareCalls())
+//     len(mockedChannel.QueueDeclareCalls())
 func (mock *ChannelMock) QueueDeclareCalls() []struct {
 	Name       string
 	Durable    bool

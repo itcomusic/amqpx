@@ -14,28 +14,28 @@ var _ Connection = &ConnectionMock{}
 
 // ConnectionMock is a mock implementation of Connection.
 //
-//	func TestSomethingThatUsesConnection(t *testing.T) {
+// 	func TestSomethingThatUsesConnection(t *testing.T) {
 //
-//		// make and configure a mocked Connection
-//		mockedConnection := &ConnectionMock{
-//			ChannelFunc: func() (Channel, error) {
-//				panic("mock out the Channel method")
-//			},
-//			CloseFunc: func() error {
-//				panic("mock out the Close method")
-//			},
-//			IsClosedFunc: func() bool {
-//				panic("mock out the IsClosed method")
-//			},
-//			NotifyCloseFunc: func(errorCh chan *amqp091.Error) chan *amqp091.Error {
-//				panic("mock out the NotifyClose method")
-//			},
-//		}
+// 		// make and configure a mocked Connection
+// 		mockedConnection := &ConnectionMock{
+// 			ChannelFunc: func() (Channel, error) {
+// 				panic("mock out the Channel method")
+// 			},
+// 			CloseFunc: func() error {
+// 				panic("mock out the Close method")
+// 			},
+// 			IsClosedFunc: func() bool {
+// 				panic("mock out the IsClosed method")
+// 			},
+// 			NotifyCloseFunc: func(errorCh chan *amqp091.Error) chan *amqp091.Error {
+// 				panic("mock out the NotifyClose method")
+// 			},
+// 		}
 //
-//		// use mockedConnection in code that requires Connection
-//		// and then make assertions.
+// 		// use mockedConnection in code that requires Connection
+// 		// and then make assertions.
 //
-//	}
+// 	}
 type ConnectionMock struct {
 	// ChannelFunc mocks the Channel method.
 	ChannelFunc func() (Channel, error)
@@ -87,8 +87,7 @@ func (mock *ConnectionMock) Channel() (Channel, error) {
 
 // ChannelCalls gets all the calls that were made to Channel.
 // Check the length with:
-//
-//	len(mockedConnection.ChannelCalls())
+//     len(mockedConnection.ChannelCalls())
 func (mock *ConnectionMock) ChannelCalls() []struct {
 } {
 	var calls []struct {
@@ -114,8 +113,7 @@ func (mock *ConnectionMock) Close() error {
 
 // CloseCalls gets all the calls that were made to Close.
 // Check the length with:
-//
-//	len(mockedConnection.CloseCalls())
+//     len(mockedConnection.CloseCalls())
 func (mock *ConnectionMock) CloseCalls() []struct {
 } {
 	var calls []struct {
@@ -141,8 +139,7 @@ func (mock *ConnectionMock) IsClosed() bool {
 
 // IsClosedCalls gets all the calls that were made to IsClosed.
 // Check the length with:
-//
-//	len(mockedConnection.IsClosedCalls())
+//     len(mockedConnection.IsClosedCalls())
 func (mock *ConnectionMock) IsClosedCalls() []struct {
 } {
 	var calls []struct {
@@ -171,8 +168,7 @@ func (mock *ConnectionMock) NotifyClose(errorCh chan *amqp091.Error) chan *amqp0
 
 // NotifyCloseCalls gets all the calls that were made to NotifyClose.
 // Check the length with:
-//
-//	len(mockedConnection.NotifyCloseCalls())
+//     len(mockedConnection.NotifyCloseCalls())
 func (mock *ConnectionMock) NotifyCloseCalls() []struct {
 	ErrorCh chan *amqp091.Error
 } {

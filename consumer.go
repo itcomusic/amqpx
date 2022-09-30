@@ -56,13 +56,13 @@ func (v *HandleValue[T]) init(m map[string]Unmarshaler) {
 	v.unmarshaler = m
 }
 
-func (v *HandleValue[T]) Serve(d *Delivery) Action {
-	u, ok := v.unmarshaler[d.ContentType]
+func (v *HandleValue[T]) Serve(delivery *Delivery) Action {
+	u, ok := v.unmarshaler[delivery.ContentType]
 	if !ok {
-		d.Log(DeliveryError{
-			Exchange:    d.Exchange,
-			RoutingKey:  d.RoutingKey,
-			ContentType: d.ContentType,
+		delivery.Log(DeliveryError{
+			Exchange:    delivery.Exchange,
+			RoutingKey:  delivery.RoutingKey,
+			ContentType: delivery.ContentType,
 			Message:     errUnmarshalerNotFound.Error(),
 		})
 		return Reject
@@ -71,16 +71,16 @@ func (v *HandleValue[T]) Serve(d *Delivery) Action {
 	value := v.pool.Get()
 	defer v.pool.Put(value)
 
-	if err := u.Unmarshal(d.Body, value); err != nil {
-		d.Log(DeliveryError{
-			Exchange:    d.Exchange,
-			RoutingKey:  d.RoutingKey,
-			ContentType: d.ContentType,
+	if err := u.Unmarshal(delivery.Body, value); err != nil {
+		delivery.Log(DeliveryError{
+			Exchange:    delivery.Exchange,
+			RoutingKey:  delivery.RoutingKey,
+			ContentType: delivery.ContentType,
 			Message:     fmt.Sprintf("has an error trying to unmarshal: %s", err),
 		})
 		return Reject
 	}
-	return v.fn(toContext(d), value)
+	return v.fn(toContext(delivery), value)
 }
 
 type consumer struct {
@@ -159,14 +159,14 @@ func (c *consumer) initChannel() error {
 	}
 	c.channel = channel
 
-	d, err := c.channel.Consume(c.queue, c.tag, c.opts.autoAck, c.opts.exclusive, false, false, nil)
+	delivery, err := c.channel.Consume(c.queue, c.tag, c.opts.autoAck, c.opts.exclusive, false, false, nil)
 	if err != nil {
 		return fmt.Errorf("consume: %w", err)
 	}
 
 	c.notifyAMQPClose = c.channel.NotifyClose(make(chan *amqp091.Error, 1))
 	c.notifyAMQPCancel = c.channel.NotifyCancel(make(chan string, 1))
-	c.delivery.init(c.done, d)
+	c.delivery.init(c.done, delivery)
 	return nil
 }
 

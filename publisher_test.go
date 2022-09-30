@@ -52,7 +52,7 @@ func TestPublisher_Publish(t *testing.T) {
 		}
 
 		pub := NewPublisher[[]byte](client, Direct, UseRoutingKey("key"))
-		got := pub.Publish(pub.NewPublishing([]byte("hello")))
+		got := pub.Publish(NewPublishing([]byte("hello")))
 
 		var err PublishError
 		assert.ErrorAs(t, got, &err)
@@ -64,7 +64,7 @@ func TestPublishing_Properties(t *testing.T) {
 	t.Parallel()
 
 	d := time.Now()
-	got := (&Publishing{}).
+	got := NewPublishing([]byte(nil)).
 		PersistentMode().
 		SetPriority(1).
 		SetCorrelationID("correlation_id_value").
@@ -77,20 +77,23 @@ func TestPublishing_Properties(t *testing.T) {
 		SetAppID("app_id_value")
 	got.WithContext(context.Background())
 
-	want := &Publishing{
-		Publishing: amqp091.Publishing{
-			DeliveryMode:  Persistent,
-			Priority:      1,
-			CorrelationId: "correlation_id_value",
-			ReplyTo:       "reply_to_value",
-			Expiration:    "expiration_value",
-			MessageId:     "message_id_value",
-			Timestamp:     d,
-			Type:          "type_value",
-			UserId:        "user_id_value",
-			AppId:         "app_id_value",
+	want := &Publishing[[]byte]{
+		req: &PublishRequest{
+			Publishing: amqp091.Publishing{
+				Headers:       amqp091.Table{},
+				DeliveryMode:  Persistent,
+				Priority:      1,
+				CorrelationId: "correlation_id_value",
+				ReplyTo:       "reply_to_value",
+				Expiration:    "expiration_value",
+				MessageId:     "message_id_value",
+				Timestamp:     d,
+				Type:          "type_value",
+				UserId:        "user_id_value",
+				AppId:         "app_id_value",
+			},
+			ctx: context.Background(),
 		},
-		ctx: context.Background(),
 	}
 	assert.Equal(t, want, got)
 }

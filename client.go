@@ -9,6 +9,10 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+const (
+	defaultConnectTimeout = time.Second * 5
+)
+
 // A Client represents connection to rabbitmq.
 type Client struct {
 	dialer      dialer
@@ -38,7 +42,7 @@ func Connect(opts ...ClientOption) (*Client, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultConnectTimeout)
 	defer cancel()
 
 	amqpConn, err := opt.dialer.Dial(ctx)
