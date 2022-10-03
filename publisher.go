@@ -198,6 +198,8 @@ func (p *Publisher[T]) Publish(m *Publishing[T], opts ...PublishOption) error {
 		return p.newPublishError(m.req.opts.key, err)
 	}
 	m.req.Body = b
+	m.req.ContentType = p.marshaler.ContentType()
+
 	return p.publishExec(m.req)
 }
 
