@@ -193,6 +193,10 @@ func (p *Publisher[T]) Publish(m *Publishing[T], opts ...PublishOption) error {
 		v(&m.req.opts)
 	}
 
+	if err := m.req.opts.validate(); err != nil {
+		return PublishError{Exchange: p.exchange, RoutingKey: m.req.opts.key, Message: err.Error()}
+	}
+
 	b, err := p.marshaler.Marshal(m.msg)
 	if err != nil {
 		return p.newPublishError(m.req.opts.key, err)

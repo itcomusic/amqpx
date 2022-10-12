@@ -14,10 +14,6 @@ func (p *publisherOptions) validate() error {
 	if p.marshaler == nil {
 		return errMarshalerNotFound
 	}
-
-	if p.publish.key == "" {
-		return errRoutingKeyEmpty
-	}
 	return nil
 }
 
@@ -85,6 +81,13 @@ type publishOptions struct {
 	key       string
 	mandatory bool
 	immediate bool
+}
+
+func (p publishOptions) validate() error {
+	if p.key == "" {
+		return errRoutingKeyEmpty
+	}
+	return nil
 }
 
 // SetRoutingKey sets routing key.

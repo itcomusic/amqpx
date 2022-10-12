@@ -102,7 +102,7 @@ Predefined support opentelemetry using hooks.
 
     // special hook
     _ = amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.SetPublishHook(func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
-        return func(m *amqpx.Publishing) error {
+        return func(m *amqpx.PublishRequest) error {
             fmt.Printf("message: %s\n", m.Body)
             return next(m)
         }
