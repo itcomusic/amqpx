@@ -4,7 +4,7 @@
 [![pkg-img]][pkg-url]
 [![coverage-img]][coverage-url]
 
-This is a Go AMQP 0.9.1 client wraps [amqp091-go](https://github.com/rabbitmq/amqp091-go)
+This is a Go AMQP 0.9.1 client wraps [amqp091-go](https://github.com/rabbitmq/amqp091-go) with support generics
 * Support of the encoding messages
     * defaults encoding (json, protobuf, protojson)
     * support of custom marshal/unmarshal functions
