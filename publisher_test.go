@@ -17,7 +17,7 @@ func TestPublisher_Reconnect(t *testing.T) {
 	defer client.Close()
 	defer time.AfterFunc(defaultTimeout, func() { panic("deadlock") }).Stop()
 
-	_ = NewPublisher[struct{}](client, Direct, UseRoutingKey("key"))
+	_ = NewPublisher[struct{}](client, ExchangeDirect, UseRoutingKey("key"))
 	done := make(chan bool)
 	mock.Conn.ChannelFunc = func() (Channel, error) {
 		defer close(done)
@@ -33,7 +33,7 @@ func TestNewPublisher_BytesMarshaler(t *testing.T) {
 	client, _ := prep(t)
 	defer client.Close()
 
-	pub := NewPublisher[[]byte](client, Direct, UseRoutingKey("key"))
+	pub := NewPublisher[[]byte](client, ExchangeDirect, UseRoutingKey("key"))
 	assert.Equal(t, defaultBytesMarshaler, pub.marshaler)
 }
 
@@ -52,12 +52,12 @@ func TestPublisher_Publish(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		pub := NewPublisher[[]byte](client, Direct, UseRoutingKey("key"))
+		pub := NewPublisher[[]byte](client, ExchangeDirect, UseRoutingKey("key"))
 		got := pub.Publish(NewPublishing([]byte("hello")))
 
 		var err PublishError
 		assert.ErrorAs(t, got, &err)
-		assert.Equal(t, PublishError{Exchange: Direct, RoutingKey: "key", Message: "failed"}, err)
+		assert.Equal(t, PublishError{Exchange: ExchangeDirect, RoutingKey: "key", Message: "failed"}, err)
 	})
 }
 

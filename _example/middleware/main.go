@@ -16,7 +16,7 @@ func main() {
 		amqpx.UsePublishHook(amqpxotel.Publisher(otel.Tracer(""))))
 	defer conn.Close()
 
-	_ = amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.SetPublishHook(func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
+	_ = amqpx.NewPublisher[[]byte](conn, amqpx.ExchangeDirect, amqpx.SetPublishHook(func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
 		return func(ctx context.Context, m *amqpx.PublishRequest) error {
 			fmt.Printf("message: %s\n", m.Body)
 			return next(ctx, m)
