@@ -1,6 +1,7 @@
 package amqpx
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,7 +71,7 @@ func TestConsumerOption(t *testing.T) {
 func TestConsumerOption_Validate(t *testing.T) {
 	t.Parallel()
 
-	fn := D(func(d *Delivery) Action { return Ack })
+	fn := D(func(ctx context.Context, d *Delivery[[]byte]) Action { return Ack })
 	t.Run("equals prefetch count", func(t *testing.T) {
 		t.Parallel()
 

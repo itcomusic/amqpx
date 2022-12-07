@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultConnectTimeout = time.Second * 5
+	defaultConnectTimeout = time.Second * 4
 )
 
 // A Client represents connection to rabbitmq.
@@ -66,7 +66,7 @@ func Connect(opts ...ClientOption) (*Client, error) {
 }
 
 // NewConsumer creates a consumer.
-func (c *Client) NewConsumer(queue string, fn Consume, opts ...ConsumerOption) error {
+func (c *Client) NewConsumer(queue string, fn HandlerValue, opts ...ConsumerOption) error {
 	opt := consumerOptions{
 		hook:        c.consumeHook,
 		unmarshaler: c.unmarshaler,
@@ -88,7 +88,7 @@ func (c *Client) NewConsumer(queue string, fn Consume, opts ...ConsumerOption) e
 		logFunc: c.logger,
 		limit:   semaphore.NewWeighted(int64(opt.concurrency)),
 		wg:      c.wg,
-		fn:      fn,
+		fn:      fn.serve,
 		done:    c.done,
 	}
 

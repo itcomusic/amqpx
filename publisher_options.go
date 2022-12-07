@@ -1,5 +1,7 @@
 package amqpx
 
+import "context"
+
 // PublisherOption is used to configure a publisher.
 type PublisherOption func(*publisherOptions)
 
@@ -81,11 +83,16 @@ type publishOptions struct {
 	key       string
 	mandatory bool
 	immediate bool
+	ctx       context.Context
 }
 
 func (p publishOptions) validate() error {
 	if p.key == "" {
 		return errRoutingKeyEmpty
+	}
+
+	if p.ctx == nil {
+		p.ctx = context.Background()
 	}
 	return nil
 }
@@ -118,5 +125,12 @@ func SetMandatory(b bool) PublishOption {
 func SetImmediate(b bool) PublishOption {
 	return func(o *publishOptions) {
 		o.immediate = b
+	}
+}
+
+// SetContext sets publish context.
+func SetContext(ctx context.Context) PublishOption {
+	return func(o *publishOptions) {
+		o.ctx = ctx
 	}
 }

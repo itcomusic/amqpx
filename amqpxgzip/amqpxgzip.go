@@ -4,6 +4,7 @@ package amqpxgzip
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 
@@ -14,28 +15,28 @@ const headerGZIP = "gzip"
 
 // Consumer returns consume hook that wraps the next.
 func Consumer() amqpx.ConsumeHook {
-	return func(next amqpx.Consume) amqpx.Consume {
-		return amqpx.D(func(delivery *amqpx.Delivery) amqpx.Action {
-			if delivery.ContentEncoding != headerGZIP {
-				return next.Serve(delivery)
+	return func(next amqpx.ConsumeFunc) amqpx.ConsumeFunc {
+		return func(ctx context.Context, req *amqpx.DeliveryRequest) amqpx.Action {
+			if req.ContentEncoding != headerGZIP {
+				return next(ctx, req)
 			}
 
-			r, err := gzip.NewReader(bytes.NewReader(delivery.Body))
+			r, err := gzip.NewReader(bytes.NewReader(req.Body))
 			if err != nil {
-				delivery.Log(fmt.Errorf("amqpxgzip: init reader: %w", err))
+				req.Log(fmt.Errorf("amqpxgzip: init reader: %w", err))
 				return amqpx.Reject
 			}
 			defer r.Close()
 
 			body, err := io.ReadAll(r)
 			if err != nil {
-				delivery.Log(fmt.Errorf("amqpxgzip: read: %w", err))
+				req.Log(fmt.Errorf("amqpxgzip: read: %w", err))
 				return amqpx.Reject
 			}
 
-			delivery.Body = body
-			return next.Serve(delivery)
-		})
+			req.Body = body
+			return next(ctx, req)
+		}
 	}
 }
 
@@ -47,7 +48,7 @@ func Publisher(level ...int) amqpx.PublishHook {
 	}
 
 	return func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
-		return func(m *amqpx.PublishRequest) error {
+		return func(ctx context.Context, m *amqpx.PublishRequest) error {
 			buf := &bytes.Buffer{}
 			w, err := gzip.NewWriterLevel(buf, compression)
 			if err != nil {
@@ -64,7 +65,7 @@ func Publisher(level ...int) amqpx.PublishHook {
 
 			m.ContentEncoding = headerGZIP
 			m.Body = buf.Bytes()
-			return next(m)
+			return next(ctx, m)
 		}
 	}
 }

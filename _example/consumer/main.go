@@ -15,16 +15,16 @@ import (
 
 func main() {
 	conn, _ := amqpx.Connect(
-		amqpx.UseUnmarshaler(
+		amqpx.UseUnmarshaler( // global unmarshalers
 			amqpxproto.NewUnmarshaler(),
-			amqpxprotojson.NewUnmarshaler()), // global unmarshalers
+			amqpxprotojson.NewUnmarshaler()),
 		amqpx.UseConsumeHook(amqpxotel.Consumer(otel.Tracer(""), "amqp")))
 	defer conn.Close()
 
 	// []byte
 	{
-		_ = conn.NewConsumer("foo", amqpx.D(func(d *amqpx.Delivery) amqpx.Action {
-			fmt.Printf("received message: %s\n", string(d.Body))
+		_ = conn.NewConsumer("foo", amqpx.D(func(ctx context.Context, d *amqpx.Delivery[[]byte]) amqpx.Action {
+			fmt.Printf("received message: %s\n", string(*d.Msg))
 			return amqpx.Ack
 		}))
 	}
@@ -36,8 +36,8 @@ func main() {
 		}
 
 		resetFn := func(v *Gopher) { v.Name = "" } // using sync.Pool
-		_ = conn.NewConsumer("bar", amqpx.T(func(ctx context.Context, m *Gopher) amqpx.Action {
-			fmt.Printf("user-id: %s, received message: %s\n", amqpx.FromContext(ctx).UserID, m.Name)
+		_ = conn.NewConsumer("bar", amqpx.D(func(ctx context.Context, d *amqpx.Delivery[Gopher]) amqpx.Action {
+			fmt.Printf("user-id: %s, received message: %s\n", d.Req.UserID, d.Msg.Name)
 			return amqpx.Ack
 		}, amqpx.SetPool(resetFn)), amqpx.SetUnmarshaler(amqpxjson.Unmarshaler), amqpx.SetAutoAckMode()) // individual single unmarshaler
 	}

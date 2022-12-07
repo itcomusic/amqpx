@@ -1,6 +1,7 @@
 package amqpxgzip
 
 import (
+	"context"
 	"testing"
 
 	"github.com/rabbitmq/amqp091-go"
@@ -15,12 +16,12 @@ var testGZIPBody = []byte{0x1f, 0x8b, 0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0
 func TestConsumer(t *testing.T) {
 	t.Parallel()
 
-	fn := Consumer()(amqpx.D(func(d *amqpx.Delivery) amqpx.Action {
+	fn := Consumer()(func(ctx context.Context, req *amqpx.DeliveryRequest) amqpx.Action {
 		return amqpx.Ack
-	}))
+	})
 
-	d := &amqpx.Delivery{ContentEncoding: headerGZIP, Body: testGZIPBody}
-	status := fn.Serve(d)
+	d := &amqpx.DeliveryRequest{ContentEncoding: headerGZIP, Body: testGZIPBody}
+	status := fn(context.Background(), d)
 	assert.Equal(t, amqpx.Ack, status)
 	assert.Equal(t, []byte("gopher"), d.Body)
 }
@@ -28,12 +29,12 @@ func TestConsumer(t *testing.T) {
 func TestPublisher(t *testing.T) {
 	t.Parallel()
 
-	fn := Publisher()(func(p *amqpx.PublishRequest) error {
+	fn := Publisher()(func(ctx context.Context, p *amqpx.PublishRequest) error {
 		assert.Equal(t, testGZIPBody, p.Body)
 		return nil
 	})
 
 	p := &amqpx.PublishRequest{Publishing: amqp091.Publishing{Body: []byte("gopher")}}
-	require.NoError(t, fn(p))
+	require.NoError(t, fn(context.Background(), p))
 	assert.Equal(t, testGZIPBody, p.Body)
 }

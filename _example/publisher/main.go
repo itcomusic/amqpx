@@ -18,7 +18,7 @@ func main() {
 	// []byte
 	{
 		pub := amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.UseRoutingKey("routing_key"))
-		_ = pub.Publish(pub.NewPublishing([]byte("hello")).PersistentMode())
+		_ = pub.Publish(amqpx.NewPublishing([]byte("hello")).PersistentMode())
 	}
 
 	// message
@@ -27,6 +27,6 @@ func main() {
 			Name string
 		}
 		pub := amqpx.NewPublisher[Gopher](conn, amqpx.Direct, amqpx.SetMarshaler(amqpxjson.Marshaler)) // individual single marshaler
-		_ = pub.Publish(pub.NewPublishing(Gopher{Name: "Rob"}), amqpx.SetRoutingKey("routing_key"))
+		_ = pub.Publish(amqpx.NewPublishing(Gopher{Name: "Rob"}), amqpx.SetRoutingKey("routing_key"))
 	}
 }

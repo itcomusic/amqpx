@@ -19,50 +19,52 @@ type Acknowledger interface {
 	Reject(tag uint64, requeue bool) error
 }
 
-type ConsumeHook func(Consume) Consume
+type ConsumeHook func(ConsumeFunc) ConsumeFunc
 
-type Consume interface {
+type ConsumeFunc func(ctx context.Context, req *DeliveryRequest) Action
+
+type HandlerValue interface {
+	serve(ctx context.Context, req *DeliveryRequest) Action
 	init(map[string]Unmarshaler)
-	Serve(*Delivery) Action
 }
 
-// D represents handler of consume amqpx.Delivery.
-type D func(d *Delivery) Action
-
-func (fn D) init(_ map[string]Unmarshaler) {}
-
-func (fn D) Serve(d *Delivery) Action {
-	return fn(d)
-}
-
-// HandleValue represents consume message unmarshales bytes into
+// handleValue represents consume message unmarshales bytes into
 // the appropriate struct based on the signature of the func.
-type HandleValue[T any] struct {
-	fn          func(context.Context, *T) Action
+type handleValue[T any] struct {
+	fn          func(context.Context, *Delivery[T]) Action
 	unmarshaler map[string]Unmarshaler
 	pool        *pool[T]
+	bytesMsg    bool
 }
 
-// T returns handler of consume specific message type.
-func T[T any](fn func(ctx context.Context, m *T) Action, opts ...PoolOptions[T]) *HandleValue[T] {
+// D represents handler of consume amqpx.Delivery[T].
+func D[T any](fn func(ctx context.Context, d *Delivery[T]) Action, opts ...PoolOptions[T]) *handleValue[T] {
+	if _, ok := any(new(T)).(*[]byte); ok {
+		return &handleValue[T]{fn: fn, bytesMsg: true}
+	}
+
 	pool := &pool[T]{}
 	for _, o := range opts {
 		o(pool)
 	}
-	return &HandleValue[T]{fn: fn, pool: pool}
+	return &handleValue[T]{fn: fn, pool: pool}
 }
 
-func (v *HandleValue[T]) init(m map[string]Unmarshaler) {
+func (v *handleValue[T]) init(m map[string]Unmarshaler) {
 	v.unmarshaler = m
 }
 
-func (v *HandleValue[T]) Serve(delivery *Delivery) Action {
-	u, ok := v.unmarshaler[delivery.ContentType]
+func (v *handleValue[T]) serve(ctx context.Context, req *DeliveryRequest) Action {
+	if v.bytesMsg {
+		return v.fn(ctx, &Delivery[T]{Msg: any(&req.Body).(*T), Req: req})
+	}
+
+	u, ok := v.unmarshaler[req.ContentType]
 	if !ok {
-		delivery.Log(DeliveryError{
-			Exchange:    delivery.Exchange,
-			RoutingKey:  delivery.RoutingKey,
-			ContentType: delivery.ContentType,
+		req.Log(DeliveryError{
+			Exchange:    req.Exchange,
+			RoutingKey:  req.RoutingKey,
+			ContentType: req.ContentType,
 			Message:     errUnmarshalerNotFound.Error(),
 		})
 		return Reject
@@ -71,16 +73,18 @@ func (v *HandleValue[T]) Serve(delivery *Delivery) Action {
 	value := v.pool.Get()
 	defer v.pool.Put(value)
 
-	if err := u.Unmarshal(delivery.Body, value); err != nil {
-		delivery.Log(DeliveryError{
-			Exchange:    delivery.Exchange,
-			RoutingKey:  delivery.RoutingKey,
-			ContentType: delivery.ContentType,
+	if err := u.Unmarshal(req.Body, value); err != nil {
+		req.Log(DeliveryError{
+			Exchange:    req.Exchange,
+			RoutingKey:  req.RoutingKey,
+			ContentType: req.ContentType,
 			Message:     fmt.Sprintf("has an error trying to unmarshal: %s", err),
 		})
 		return Reject
 	}
-	return v.fn(toContext(delivery), value)
+
+	req.Body = nil
+	return v.fn(ctx, newDelivery(value, req))
 }
 
 type consumer struct {
@@ -95,7 +99,7 @@ type consumer struct {
 
 	limit *semaphore.Weighted
 	wg    *sync.WaitGroup
-	fn    Consume
+	fn    ConsumeFunc
 
 	logFunc LogFunc
 	done    context.Context
@@ -227,8 +231,8 @@ func (c *consumer) handleDelivery(ctx context.Context, d *amqp091.Delivery) {
 	defer c.wg.Done()
 	defer c.limit.Release(1)
 
-	delivery := newDelivery(ctx, d, c.logFunc)
-	if status := c.fn.Serve(delivery); !c.opts.autoAck {
+	delivery := newDeliveryRequest(d, c.logFunc)
+	if status := c.fn(ctx, delivery); !c.opts.autoAck {
 		if err := delivery.setStatus(status); err != nil {
 			c.logFunc(c.newConsumerError(err))
 		}

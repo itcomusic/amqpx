@@ -1,7 +1,6 @@
 package amqpx
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -32,8 +31,7 @@ const (
 	Reject
 )
 
-// A Delivery represent the fields for a delivered message.
-type Delivery struct {
+type DeliveryRequest struct {
 	Headers Table // Application or header exchange table
 
 	// Properties
@@ -56,18 +54,17 @@ type Delivery struct {
 	RoutingKey      string // basic.publish routing key
 	Body            []byte
 
-	logFunc      LogFunc
 	status       Action
-	ctx          context.Context
 	acknowledger Acknowledger // the channel from which this delivery arrived
+	logFunc      LogFunc
 }
 
-func newDelivery(ctx context.Context, d *amqp091.Delivery, log LogFunc) *Delivery {
+func newDeliveryRequest(d *amqp091.Delivery, logFunc LogFunc) *DeliveryRequest {
 	if d.Headers == nil {
 		d.Headers = make(amqp091.Table)
 	}
 
-	return &Delivery{
+	return &DeliveryRequest{
 		Headers:         d.Headers,
 		ContentType:     d.ContentType,
 		ContentEncoding: d.ContentEncoding,
@@ -87,33 +84,21 @@ func newDelivery(ctx context.Context, d *amqp091.Delivery, log LogFunc) *Deliver
 		Exchange:        d.Exchange,
 		RoutingKey:      d.RoutingKey,
 		Body:            d.Body,
-
-		logFunc:      log,
-		ctx:          ctx,
-		acknowledger: d.Acknowledger,
+		acknowledger:    d.Acknowledger,
+		logFunc:         logFunc,
 	}
 }
 
 // Status returns acknowledgement status.
-func (d *Delivery) Status() Action {
+func (d *DeliveryRequest) Status() Action {
 	return d.status
 }
 
-// Context returns context.
-func (d *Delivery) Context() context.Context {
-	return d.ctx
-}
-
-// WithContext sets context.
-func (d *Delivery) WithContext(ctx context.Context) {
-	d.ctx = ctx
-}
-
-func (d *Delivery) Log(err error) {
+func (d *DeliveryRequest) Log(err error) {
 	d.logFunc(err)
 }
 
-func (d *Delivery) setStatus(status Action) error {
+func (d *DeliveryRequest) setStatus(status Action) error {
 	switch status {
 	case Ack:
 		return d.ack()
@@ -129,7 +114,7 @@ func (d *Delivery) setStatus(status Action) error {
 	}
 }
 
-func (d *Delivery) ack() error {
+func (d *DeliveryRequest) ack() error {
 	if err := d.acknowledger.Ack(d.DeliveryTag, false); err != nil {
 		return err
 	}
@@ -138,7 +123,7 @@ func (d *Delivery) ack() error {
 	return nil
 }
 
-func (d *Delivery) nack() error {
+func (d *DeliveryRequest) nack() error {
 	if err := d.acknowledger.Nack(d.DeliveryTag, false, true); err != nil {
 		return err
 	}
@@ -147,11 +132,24 @@ func (d *Delivery) nack() error {
 	return nil
 }
 
-func (d *Delivery) reject() error {
+func (d *DeliveryRequest) reject() error {
 	if err := d.acknowledger.Reject(d.DeliveryTag, false); err != nil {
 		return err
 	}
 
 	d.status = Reject
 	return nil
+}
+
+// A Delivery represent the fields for a delivered message.
+type Delivery[T any] struct {
+	Msg *T
+	Req *DeliveryRequest
+}
+
+func newDelivery[T any](v *T, req *DeliveryRequest) *Delivery[T] {
+	return &Delivery[T]{
+		Msg: v,
+		Req: req,
+	}
 }

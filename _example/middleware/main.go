@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"go.opentelemetry.io/otel"
@@ -16,9 +17,9 @@ func main() {
 	defer conn.Close()
 
 	_ = amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.SetPublishHook(func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
-		return func(m *amqpx.Publishing) error {
+		return func(ctx context.Context, m *amqpx.PublishRequest) error {
 			fmt.Printf("message: %s\n", m.Body)
-			return next(m)
+			return next(ctx, m)
 		}
 	}))
 }

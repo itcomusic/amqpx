@@ -31,7 +31,7 @@ func TestConsumer_Reconnect(t *testing.T) {
 	defer client.Close()
 	defer time.AfterFunc(defaultTimeout, func() { panic("deadlock") }).Stop()
 
-	assert.NoError(t, client.NewConsumer("", D(func(*Delivery) Action { return Ack })))
+	assert.NoError(t, client.NewConsumer("", D(func(context.Context, *Delivery[[]byte]) Action { return Ack })))
 	done := make(chan bool)
 	mock.Conn.ChannelFunc = func() (Channel, error) {
 		defer close(done)
@@ -54,7 +54,7 @@ func TestClient_NewConsumer(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		got := client.NewConsumer("foo", D(func(*Delivery) Action { return Ack }))
+		got := client.NewConsumer("foo", D(func(context.Context, *Delivery[[]byte]) Action { return Ack }))
 		var err ConsumerError
 		assert.ErrorAs(t, got, &err)
 		assert.Equal(t, ConsumerError{Queue: "foo", Message: "create channel: failed"}, err)
@@ -70,14 +70,14 @@ func TestClient_NewConsumer(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		got := client.NewConsumer("foo", D(func(*Delivery) Action { return Ack }))
+		got := client.NewConsumer("foo", D(func(context.Context, *Delivery[[]byte]) Action { return Ack }))
 		var err ConsumerError
 		assert.ErrorAs(t, got, &err)
 		assert.Equal(t, ConsumerError{Queue: "foo", Message: "consume: failed"}, err)
 	})
 }
 
-func TestConsumer_AckMode(t *testing.T) {
+func TestDeliveryRequest_setStatus(t *testing.T) {
 	t.Parallel()
 
 	t.Run("ack", func(t *testing.T) {
@@ -89,9 +89,7 @@ func TestConsumer_AckMode(t *testing.T) {
 			},
 		}
 
-		d := &Delivery{
-			acknowledger: ackMock,
-		}
+		d := &DeliveryRequest{acknowledger: ackMock}
 		require.NoError(t, d.setStatus(Ack))
 		assert.Equal(t, 1, len(ackMock.AckCalls()))
 	})
@@ -105,9 +103,7 @@ func TestConsumer_AckMode(t *testing.T) {
 			},
 		}
 
-		d := &Delivery{
-			acknowledger: ackMock,
-		}
+		d := &DeliveryRequest{acknowledger: ackMock}
 		require.NoError(t, d.setStatus(Nack))
 		assert.Equal(t, 1, len(ackMock.NackCalls()))
 	})
@@ -121,15 +117,13 @@ func TestConsumer_AckMode(t *testing.T) {
 			},
 		}
 
-		d := &Delivery{
-			acknowledger: ackMock,
-		}
+		d := &DeliveryRequest{acknowledger: ackMock}
 		require.NoError(t, d.setStatus(Reject))
 		assert.Equal(t, 1, len(ackMock.RejectCalls()))
 	})
 }
 
-func TestConsumer_DeliveryBody(t *testing.T) {
+func TestDeliveryBytes(t *testing.T) {
 	t.Parallel()
 
 	client, mock := prep(t)
@@ -151,16 +145,16 @@ func TestConsumer_DeliveryBody(t *testing.T) {
 	}
 
 	done := make(chan bool)
-	got := client.NewConsumer("", D(func(d *Delivery) Action {
+	got := client.NewConsumer("", D(func(ctx context.Context, d *Delivery[[]byte]) Action {
 		defer close(done)
-		assert.Equal(t, msg.Body, d.Body)
+		assert.Equal(t, &msg.Body, d.Msg)
 		return Ack
 	}))
 	require.NoError(t, got)
 	<-done
 }
 
-func TestHandleValue_Serve(t *testing.T) {
+func TestDeliveryStruct(t *testing.T) {
 	t.Parallel()
 
 	type Gopher struct {
@@ -168,13 +162,13 @@ func TestHandleValue_Serve(t *testing.T) {
 	}
 
 	var call bool
-	fn := T[Gopher](func(ctx context.Context, m *Gopher) Action {
+	fn := D[Gopher](func(ctx context.Context, got *Delivery[Gopher]) Action {
 		call = true
-		assert.Equal(t, &Gopher{Name: "gopher"}, m)
+		assert.Equal(t, &Delivery[Gopher]{Msg: &Gopher{Name: "gopher"}, Req: &DeliveryRequest{Body: nil, ContentType: testUnmarshaler.ContentType()}}, got)
 		return Ack
 	})
 	fn.init(map[string]Unmarshaler{testUnmarshaler.ContentType(): testUnmarshaler})
-	got := fn.Serve(&Delivery{Body: []byte(`{"name":"gopher"}`), ContentType: testUnmarshaler.ContentType(), ctx: context.Background()})
+	got := fn.serve(context.Background(), &DeliveryRequest{Body: []byte(`{"name":"gopher"}`), ContentType: testUnmarshaler.ContentType()})
 	assert.Equal(t, true, call)
 	assert.Equal(t, Ack, got)
 }

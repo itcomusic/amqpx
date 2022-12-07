@@ -2,6 +2,8 @@
 package amqpxotel
 
 import (
+	"context"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
@@ -11,23 +13,22 @@ import (
 
 // Consumer returns consume hook that wraps the next.
 func Consumer(tracer trace.Tracer, operationName string) amqpx.ConsumeHook {
-	return func(next amqpx.Consume) amqpx.Consume {
-		return amqpx.D(func(d *amqpx.Delivery) amqpx.Action {
-			spanContext := otel.GetTextMapPropagator().Extract(d.Context(), table(d.Headers))
-			ctx, span := tracer.Start(d.Context(), operationName, trace.WithSpanKind(trace.SpanKindConsumer), trace.WithLinks(trace.LinkFromContext(spanContext)))
+	return func(next amqpx.ConsumeFunc) amqpx.ConsumeFunc {
+		return func(ctx context.Context, req *amqpx.DeliveryRequest) amqpx.Action {
+			spanContext := otel.GetTextMapPropagator().Extract(ctx, table(req.Headers))
+			ctx, span := tracer.Start(ctx, operationName, trace.WithSpanKind(trace.SpanKindConsumer), trace.WithLinks(trace.LinkFromContext(spanContext)))
 			defer span.End()
-			d.WithContext(ctx)
-			return next.Serve(d)
-		})
+			return next(ctx, req)
+		}
 	}
 }
 
 // Publisher returns publish hook that wraps the next.
 func Publisher(tracer trace.Tracer) amqpx.PublishHook {
 	return func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
-		return func(m *amqpx.PublishRequest) error {
-			otel.GetTextMapPropagator().Inject(m.Context(), table(m.Headers))
-			return next(m)
+		return func(ctx context.Context, m *amqpx.PublishRequest) error {
+			otel.GetTextMapPropagator().Inject(ctx, table(m.Headers))
+			return next(ctx, m)
 		}
 	}
 }

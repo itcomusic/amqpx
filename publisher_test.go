@@ -76,7 +76,6 @@ func TestPublishing_Properties(t *testing.T) {
 		SetType("type_value").
 		SetUserID("user_id_value").
 		SetAppID("app_id_value")
-	got.WithContext(context.Background())
 
 	want := &Publishing[[]byte]{
 		req: &PublishRequest{
@@ -93,7 +92,6 @@ func TestPublishing_Properties(t *testing.T) {
 				UserId:        "user_id_value",
 				AppId:         "app_id_value",
 			},
-			ctx: context.Background(),
 		},
 	}
 	assert.Equal(t, want, got)

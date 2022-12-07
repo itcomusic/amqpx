@@ -13,18 +13,12 @@ import (
 type PublishHook func(PublisherFunc) PublisherFunc
 
 // PublisherFunc is func used for publish message.
-type PublisherFunc func(*PublishRequest) error
+type PublisherFunc func(context.Context, *PublishRequest) error
 
 // A PublishRequest represents a request to publish a message.
 type PublishRequest struct {
 	amqp091.Publishing
-	ctx  context.Context
 	opts publishOptions
-}
-
-// Context returns context.
-func (m *PublishRequest) Context() context.Context {
-	return m.ctx
 }
 
 // A Publishing represents message sending to the server.
@@ -39,7 +33,6 @@ func NewPublishing[T any](v T) *Publishing[T] {
 		msg: v,
 		req: &PublishRequest{
 			Publishing: amqp091.Publishing{Headers: make(amqp091.Table)},
-			ctx:        context.Background(),
 		},
 	}
 }
@@ -102,13 +95,6 @@ func (m *Publishing[T]) SetUserID(id string) *Publishing[T] {
 func (m *Publishing[T]) SetAppID(id string) *Publishing[T] {
 	m.req.AppId = id
 	return m
-}
-
-// WithContext sets context.
-func (m *Publishing[T]) WithContext(ctx context.Context) {
-	if ctx != nil {
-		m.req.ctx = ctx
-	}
 }
 
 // A Publisher represents client for sending the messages.
@@ -204,16 +190,16 @@ func (p *Publisher[T]) Publish(m *Publishing[T], opts ...PublishOption) error {
 	m.req.Body = b
 	m.req.ContentType = p.marshaler.ContentType()
 
-	return p.publishExec(m.req)
+	return p.publishExec(m.req.opts.ctx, m.req)
 }
 
-func (p *Publisher[T]) publish(m *PublishRequest) error {
+func (p *Publisher[T]) publish(ctx context.Context, m *PublishRequest) error {
 	channel := p.amqpChannel.Load()
 	if channel == nil {
 		return p.newPublishError(m.opts.key, errChannelClosed)
 	}
 
-	confirm, err := (*channel).PublishWithDeferredConfirmWithContext(m.ctx, p.exchange, m.opts.key, m.opts.mandatory, m.opts.immediate, m.Publishing)
+	confirm, err := (*channel).PublishWithDeferredConfirmWithContext(ctx, p.exchange, m.opts.key, m.opts.mandatory, m.opts.immediate, m.Publishing)
 	if err != nil {
 		return p.newPublishError(m.opts.key, err)
 	}
