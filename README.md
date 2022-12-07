@@ -73,7 +73,7 @@ The Concurrency option limits numbers of goroutines of consumer, depends on pref
 ```go
     // prefetch count
     _ = conn.NewConsumer("foo", amqpx.D(func(ctx context.Context, d *amqpx.Delivery[[]byte]) amqpx.Action {
-        fmt.Printf("received message: %s\n", string(*d.Body))
+        fmt.Printf("received message: %s\n", string(*d.Msg))
         return amqpx.Ack
     }), amqpx.SetPrefetchCount(8))
 
@@ -88,7 +88,7 @@ The Concurrency option limits numbers of goroutines of consumer, depends on pref
 The declare queue, exchange and binding queue.
 ```go
     _ = conn.NewConsumer("foo", amqpx.D(func(ctx context.Context, d *amqpx.Delivery[[]byte]) amqpx.Action {
-        fmt.Printf("received message: %s\n", string(*d.Body))
+        fmt.Printf("received message: %s\n", string(*d.Msg))
         return amqpx.Ack
     }), amqpx.DeclareQueue(amqpx.QueueDeclare{AutoDelete: true}),
         amqpx.DeclareExchange(amqpx.ExchangeDeclare{Name: "exchange_name", Type: amqpx.Direct}),
