@@ -120,6 +120,9 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 	opt := &publisherOptions{
 		marshaler: client.marshaler,
 		hook:      client.publishHook,
+		publish: publishOptions{
+			ctx: context.Background(),
+		},
 	}
 
 	if _, ok := any(new(T)).(*[]byte); ok {

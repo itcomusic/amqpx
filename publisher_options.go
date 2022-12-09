@@ -90,10 +90,6 @@ func (p publishOptions) validate() error {
 	if p.key == "" {
 		return errRoutingKeyEmpty
 	}
-
-	if p.ctx == nil {
-		p.ctx = context.Background()
-	}
 	return nil
 }
 
@@ -131,6 +127,8 @@ func SetImmediate(b bool) PublishOption {
 // SetContext sets publish context.
 func SetContext(ctx context.Context) PublishOption {
 	return func(o *publishOptions) {
-		o.ctx = ctx
+		if ctx != nil {
+			o.ctx = ctx
+		}
 	}
 }
