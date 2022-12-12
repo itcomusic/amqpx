@@ -23,8 +23,8 @@ func main() {
 
 	// []byte
 	{
-		_ = conn.NewConsumer("foo", amqpx.D(func(ctx context.Context, d *amqpx.Delivery[[]byte]) amqpx.Action {
-			fmt.Printf("received message: %s\n", string(*d.Msg))
+		_ = conn.NewConsumer("foo", amqpx.D(func(ctx context.Context, req *amqpx.Delivery[[]byte]) amqpx.Action {
+			fmt.Printf("received message: %s\n", string(*req.Msg))
 			return amqpx.Ack
 		}))
 	}
@@ -36,8 +36,8 @@ func main() {
 		}
 
 		resetFn := func(v *Gopher) { v.Name = "" } // using sync.Pool
-		_ = conn.NewConsumer("bar", amqpx.D(func(ctx context.Context, d *amqpx.Delivery[Gopher]) amqpx.Action {
-			fmt.Printf("user-id: %s, received message: %s\n", d.Req.UserID, d.Msg.Name)
+		_ = conn.NewConsumer("bar", amqpx.D(func(ctx context.Context, req *amqpx.Delivery[Gopher]) amqpx.Action {
+			fmt.Printf("user-id: %s, received message: %s\n", req.Req.UserID, req.Msg.Name)
 			return amqpx.Ack
 		}, amqpx.SetPool(resetFn)), amqpx.SetUnmarshaler(amqpxjson.Unmarshaler), amqpx.SetAutoAckMode()) // individual single unmarshaler
 	}
