@@ -61,7 +61,7 @@ Pretty using struct and avoiding boilerplate marhsal/unmarshal. It is strict com
     
     resetFn := func(v *Gopher) { v.Name = "" } // option using sync.Pool
     // override default unmarshaler
-    _ = conn.NewConsumer("bar", amqpx.T(func(ctx context.Context, req *amqpx.Delivery[Gopher]) amqpx.Action {
+    _ = conn.NewConsumer("bar", amqpx.D(func(ctx context.Context, req *amqpx.Delivery[Gopher]) amqpx.Action {
         fmt.Printf("user-id: %s, received message: %s\n", req.Req.UserID, req.Msg.Name)
         return amqpx.Ack
     }, amqpx.SetPool(resetFn)), amqpx.SetUnmarshaler(amqpxjson.Unmarshaler), amqpx.SetAutoAckMode())
