@@ -33,21 +33,16 @@ type HandlerValue interface {
 type handleValue[T any] struct {
 	fn          func(context.Context, *Delivery[T]) Action
 	unmarshaler map[string]Unmarshaler
-	pool        *pool[T]
 	bytesMsg    bool
 }
 
 // D represents handler of consume amqpx.Delivery[T].
-func D[T any](fn func(ctx context.Context, d *Delivery[T]) Action, opts ...PoolOptions[T]) *handleValue[T] {
+func D[T any](fn func(ctx context.Context, d *Delivery[T]) Action) *handleValue[T] {
 	if _, ok := any(new(T)).(*[]byte); ok {
 		return &handleValue[T]{fn: fn, bytesMsg: true}
 	}
 
-	pool := &pool[T]{}
-	for _, o := range opts {
-		o(pool)
-	}
-	return &handleValue[T]{fn: fn, pool: pool}
+	return &handleValue[T]{fn: fn}
 }
 
 func (v *handleValue[T]) init(m map[string]Unmarshaler) {
@@ -61,25 +56,13 @@ func (v *handleValue[T]) serve(ctx context.Context, req *DeliveryRequest) Action
 
 	u, ok := v.unmarshaler[req.ContentType]
 	if !ok {
-		req.Log(DeliveryError{
-			Exchange:    req.Exchange,
-			RoutingKey:  req.RoutingKey,
-			ContentType: req.ContentType,
-			Message:     errUnmarshalerNotFound.Error(),
-		})
+		req.log("[ERROR] %s: %s", req.info(), errUnmarshalerNotFound)
 		return Reject
 	}
 
-	value := v.pool.Get()
-	defer v.pool.Put(value)
-
+	value := new(T)
 	if err := u.Unmarshal(req.Body, value); err != nil {
-		req.Log(DeliveryError{
-			Exchange:    req.Exchange,
-			RoutingKey:  req.RoutingKey,
-			ContentType: req.ContentType,
-			Message:     fmt.Sprintf("has an error trying to unmarshal: %s", err),
-		})
+		req.log("[ERROR] %s: %s", req.info(), fmt.Errorf("has an error trying to unmarshal: %w", err))
 		return Reject
 	}
 
@@ -101,8 +84,8 @@ type consumer struct {
 	wg    *sync.WaitGroup
 	fn    ConsumeFunc
 
-	logFunc LogFunc
-	done    context.Context
+	log  LogFunc
+	done context.Context
 }
 
 func (c *consumer) initChannel() error {
@@ -215,7 +198,7 @@ func (c *consumer) makeConnect() (exit bool) {
 		}
 
 		if !errors.Is(err, errConnClosed) {
-			c.logFunc(c.newConsumerError(err))
+			c.log("[ERROR] queue %q consumer-tag %q: %s", c.queue, c.tag, err)
 		}
 
 		select {
@@ -231,10 +214,10 @@ func (c *consumer) handleDelivery(ctx context.Context, d *amqp091.Delivery) {
 	defer c.wg.Done()
 	defer c.limit.Release(1)
 
-	delivery := newDeliveryRequest(d, c.logFunc)
+	delivery := newDeliveryRequest(d, c.log)
 	if status := c.fn(ctx, delivery); !c.opts.autoAck {
 		if err := delivery.setStatus(status); err != nil {
-			c.logFunc(c.newConsumerError(err))
+			c.log("[ERROR] queue %q consumer-tag %q: %s", c.queue, c.tag, err)
 		}
 	}
 }
@@ -242,14 +225,6 @@ func (c *consumer) handleDelivery(ctx context.Context, d *amqp091.Delivery) {
 func (c *consumer) close() {
 	c.delivery.cancel()
 	c.channel.Close()
-}
-
-func (c *consumer) newConsumerError(err error) ConsumerError {
-	return ConsumerError{
-		Queue:   c.queue,
-		Tag:     c.tag,
-		Message: err.Error(),
-	}
 }
 
 type channelDelivery struct {

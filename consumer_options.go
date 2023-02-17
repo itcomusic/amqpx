@@ -2,7 +2,6 @@ package amqpx
 
 import (
 	"runtime"
-	"sync"
 )
 
 var defaultLimitConcurrency = runtime.GOMAXPROCS(0)
@@ -133,19 +132,5 @@ func DeclareExchange(e ExchangeDeclare) ConsumerOption {
 func BindQueue(q QueueBind) ConsumerOption {
 	return func(o *consumerOptions) {
 		o.channel.queueBind = &q
-	}
-}
-
-// PoolOptions is used to configure a pool objects.
-type PoolOptions[T any] func(*pool[T])
-
-// SetPool sets pool and reset function of the object.
-func SetPool[T any](reset func(v *T)) PoolOptions[T] {
-	return func(o *pool[T]) {
-		if reset == nil {
-			return
-		}
-		o.pool = sync.Pool{New: func() any { return new(T) }}
-		o.reset = reset
 	}
 }

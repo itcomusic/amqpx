@@ -82,9 +82,9 @@ var defaultConfig = amqp091.Config{
 }
 
 type defaultDialer struct {
-	URI     string
-	Config  amqp091.Config
-	logFunc LogFunc
+	URI    string
+	Config amqp091.Config
+	log    LogFunc
 }
 
 func (d *defaultDialer) Dial(ctx context.Context) (Connection, error) {
@@ -93,7 +93,7 @@ func (d *defaultDialer) Dial(ctx context.Context) (Connection, error) {
 		if err == nil {
 			return &amqpConn{conn: conn}, nil
 		}
-		d.logFunc(fmt.Errorf("dial conn: %w", err))
+		d.log("[ERROR] dial conn: %v", err)
 
 		select {
 		case <-ctx.Done():

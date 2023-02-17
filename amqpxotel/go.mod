@@ -13,6 +13,6 @@ require (
 require (
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/rabbitmq/amqp091-go v1.5.0 // indirect
+	github.com/rabbitmq/amqp091-go v1.6.1 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
 )

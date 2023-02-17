@@ -56,10 +56,10 @@ type DeliveryRequest struct {
 
 	status       Action
 	acknowledger Acknowledger // the channel from which this delivery arrived
-	logFunc      LogFunc
+	log          LogFunc
 }
 
-func newDeliveryRequest(d *amqp091.Delivery, logFunc LogFunc) *DeliveryRequest {
+func newDeliveryRequest(d *amqp091.Delivery, l LogFunc) *DeliveryRequest {
 	if d.Headers == nil {
 		d.Headers = make(amqp091.Table)
 	}
@@ -85,7 +85,7 @@ func newDeliveryRequest(d *amqp091.Delivery, logFunc LogFunc) *DeliveryRequest {
 		RoutingKey:      d.RoutingKey,
 		Body:            d.Body,
 		acknowledger:    d.Acknowledger,
-		logFunc:         logFunc,
+		log:             l,
 	}
 }
 
@@ -94,8 +94,8 @@ func (d *DeliveryRequest) Status() Action {
 	return d.status
 }
 
-func (d *DeliveryRequest) Log(err error) {
-	d.logFunc(err)
+func (d *DeliveryRequest) Log(format string, v ...any) {
+	d.log(format, v...)
 }
 
 func (d *DeliveryRequest) setStatus(status Action) error {
@@ -139,6 +139,10 @@ func (d *DeliveryRequest) reject() error {
 
 	d.status = Reject
 	return nil
+}
+
+func (d *DeliveryRequest) info() string {
+	return fmt.Sprintf("exchange %q routing-key %q content-type %q", d.Exchange, d.RoutingKey, d.ContentType)
 }
 
 // A Delivery represent the fields for a delivered message.

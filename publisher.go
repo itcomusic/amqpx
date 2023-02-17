@@ -109,7 +109,7 @@ type Publisher[T any] struct {
 
 	marshaler      Marshaler
 	publishOptions publishOptions
-	logFunc        LogFunc
+	log            LogFunc
 	done           context.Context
 	cancel         context.CancelFunc
 	err            error
@@ -133,7 +133,7 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 	}
 
 	if err := opt.validate(); err != nil {
-		return &Publisher[T]{err: PublishError{Exchange: exchange, RoutingKey: opt.publish.key, Message: err.Error()}}
+		return &Publisher[T]{err: err}
 	}
 
 	pub := &Publisher[T]{
@@ -153,7 +153,7 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 		confirm:        opt.confirm,
 		publishOptions: opt.publish,
 		marshaler:      opt.marshaler,
-		logFunc:        client.logger,
+		log:            client.logger,
 	}
 	pub.done, pub.cancel = context.WithCancel(client.done)
 
@@ -174,7 +174,7 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 // Publish publishes the message.
 func (p *Publisher[T]) Publish(m *Publishing[T], opts ...PublishOption) error {
 	if err := p.err; err != nil {
-		return err
+		return p.newPublishError(m.req.opts.key, err)
 	}
 
 	m.req.opts = p.publishOptions
@@ -183,7 +183,7 @@ func (p *Publisher[T]) Publish(m *Publishing[T], opts ...PublishOption) error {
 	}
 
 	if err := m.req.opts.validate(); err != nil {
-		return PublishError{Exchange: p.exchange, RoutingKey: m.req.opts.key, Message: err.Error()}
+		return p.newPublishError(m.req.opts.key, err)
 	}
 
 	b, err := p.marshaler.Marshal(m.msg)
@@ -207,8 +207,15 @@ func (p *Publisher[T]) publish(ctx context.Context, m *PublishRequest) error {
 		return p.newPublishError(m.opts.key, err)
 	}
 
-	if confirm != nil && !confirm.Wait() {
-		return p.newPublishError(m.opts.key, errPublishConfirm)
+	if confirm != nil {
+		ok, err := confirm.WaitContext(ctx)
+		if err != nil {
+			return p.newPublishError(m.opts.key, fmt.Errorf("%s: %w", errPublishConfirm, err))
+		}
+
+		if !ok {
+			return p.newPublishError(m.opts.key, errPublishConfirm)
+		}
 	}
 	return nil
 }
@@ -280,7 +287,7 @@ func (p *Publisher[T]) makeConnect() (exit bool) {
 		}
 
 		if !errors.Is(err, errConnClosed) {
-			p.logFunc(p.newPublishError(p.publishOptions.key, err))
+			p.log("[ERROR] exchange %q routing-key %q: %s", p.exchange, p.publishOptions.key, err)
 		}
 
 		select {
@@ -294,10 +301,10 @@ func (p *Publisher[T]) makeConnect() (exit bool) {
 
 func (p *Publisher[T]) notifyReturn(channel Channel) {
 	for v := range channel.NotifyReturn(make(chan amqp091.Return, 1)) {
-		p.logFunc(ReturnError{Exchange: v.Exchange, RoutingKey: v.RoutingKey, ReplyText: v.ReplyText, ReplyCode: v.ReplyCode})
+		p.log("[ERROR] exchange %q routing-key %q undeliverable message desc %q \"%d\"", v.Exchange, v.RoutingKey, v.ReplyText, v.ReplyCode)
 	}
 }
 
-func (p *Publisher[T]) newPublishError(routingKey string, err error) PublishError {
-	return PublishError{Exchange: p.exchange, RoutingKey: routingKey, Message: err.Error()}
+func (p *Publisher[T]) newPublishError(routingKey string, err error) error {
+	return fmt.Errorf("amqpx: exchange %q routing-key %q: %s", p.exchange, routingKey, err)
 }

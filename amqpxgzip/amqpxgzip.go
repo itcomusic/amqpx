@@ -23,14 +23,14 @@ func Consumer() amqpx.ConsumeHook {
 
 			r, err := gzip.NewReader(bytes.NewReader(req.Body))
 			if err != nil {
-				req.Log(fmt.Errorf("amqpxgzip: init reader: %w", err))
+				req.Log("[ERROR] amqpxgzip: init reader: %s", err)
 				return amqpx.Reject
 			}
 			defer r.Close()
 
 			body, err := io.ReadAll(r)
 			if err != nil {
-				req.Log(fmt.Errorf("amqpxgzip: read: %w", err))
+				req.Log("[ERROR] amqpxgzip: read: %s", err)
 				return amqpx.Reject
 			}
 

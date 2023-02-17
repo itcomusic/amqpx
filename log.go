@@ -6,14 +6,14 @@ import (
 )
 
 // LogFunc type is an adapter to allow the use of ordinary functions as LogFunc.
-type LogFunc func(error)
+type LogFunc func(format string, v ...any)
 
 // NoOpLogger logger does nothing
-var NoOpLogger = LogFunc(func(error) {})
+var NoOpLogger = LogFunc(func(format string, v ...any) {})
 
 var defaultLogger = func() LogFunc {
-	logger := log.New(os.Stderr, "amqpx: ", log.LstdFlags)
-	return func(err error) {
-		logger.Println(err.Error())
+	l := log.New(os.Stderr, "amqpx: ", log.LstdFlags)
+	return func(format string, v ...any) {
+		l.Printf(format, v...)
 	}
 }()

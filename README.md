@@ -5,18 +5,22 @@
 [![coverage-img]][coverage-url]
 
 This is a Go AMQP 0.9.1 client wraps [amqp091-go](https://github.com/rabbitmq/amqp091-go) with support generics
+
 * Support of the encoding messages
     * defaults encoding (json, protobuf, protojson)
     * support of custom marshal/unmarshal functions
 * Middleware for easy integration
 
 ## Installation
+
 Go version 1.19+
+
 ```bash
 go get github.com/itcomusic/amqpx
 ```
 
 ## Usage
+
 ```go
 package main
 
@@ -44,7 +48,10 @@ func main() {
 ```
 
 ### Publisher & consumer struct
-Pretty using struct and avoiding boilerplate marhsal/unmarshal. It is strict compared content-type of the message and invalid body is rejected.
+
+Pretty using struct and avoiding boilerplate marhsal/unmarshal. It is strict compared content-type of the message and
+invalid body is rejected.
+
 ```go
     conn, _ := amqpx.Connect(
         amqpx.UseUnmarshaler(amqpxproto.NewUnmarshaler()), // global unmarshalers
@@ -58,18 +65,19 @@ Pretty using struct and avoiding boilerplate marhsal/unmarshal. It is strict com
     // override default marshaler
     pub := amqpx.NewPublisher[Gopher](conn, amqpx.Direct, amqpx.SetMarshaler(amqpxjson.Marshaler)) 
     _ = pub.Publish(amqpx.NewPublishing(Gopher{Name: "Rob"}), amqpx.SetRoutingKey("routing_key"))
-    
-    resetFn := func(v *Gopher) { v.Name = "" } // option using sync.Pool
+	
     // override default unmarshaler
     _ = conn.NewConsumer("bar", amqpx.D(func(ctx context.Context, req *amqpx.Delivery[Gopher]) amqpx.Action {
         fmt.Printf("user-id: %s, received message: %s\n", req.Req.UserID, req.Msg.Name)
         return amqpx.Ack
-    }, amqpx.SetPool(resetFn)), amqpx.SetUnmarshaler(amqpxjson.Unmarshaler), amqpx.SetAutoAckMode())
+    }), amqpx.SetUnmarshaler(amqpxjson.Unmarshaler), amqpx.SetAutoAckMode())
 ```
 
 ### Consumer rate limiting
-The Prefetch count informs the server will deliver that many messages to consumers before acknowledgments are received. 
+
+The Prefetch count informs the server will deliver that many messages to consumers before acknowledgments are received.
 The Concurrency option limits numbers of goroutines of consumer, depends on prefetch count and auto-ack mode.
+
 ```go
     // prefetch count
     _ = conn.NewConsumer("foo", amqpx.D(func(ctx context.Context, req *amqpx.Delivery[[]byte]) amqpx.Action {
@@ -85,7 +93,9 @@ The Concurrency option limits numbers of goroutines of consumer, depends on pref
 ```
 
 ### Declare queue
+
 The declare queue, exchange and binding queue.
+
 ```go
     _ = conn.NewConsumer("foo", amqpx.D(func(ctx context.Context, req *amqpx.Delivery[[]byte]) amqpx.Action {
         fmt.Printf("received message: %s\n", string(*req.Msg))
@@ -96,7 +106,9 @@ The declare queue, exchange and binding queue.
 ```
 
 ### Middleware
+
 Predefined support opentelemetry using hooks.
+
 ```go
     import (
         "github.com/itcomusic/amqpx"
@@ -117,12 +129,19 @@ Predefined support opentelemetry using hooks.
         }
     }))
 ```
+
 ## License
+
 [MIT License](LICENSE)
 
 [build-img]: https://github.com/itcomusic/amqpx/workflows/build/badge.svg
+
 [build-url]: https://github.com/itcomusic/amqpx/actions
+
 [pkg-img]: https://pkg.go.dev/badge/github.com/itcomusic/amqpx.svg
+
 [pkg-url]: https://pkg.go.dev/github.com/itcomusic/amqpx
+
 [coverage-img]: https://codecov.io/gh/itcomusic/amqpx/branch/main/graph/badge.svg
+
 [coverage-url]: https://codecov.io/gh/itcomusic/amqpx

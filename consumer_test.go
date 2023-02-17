@@ -54,10 +54,9 @@ func TestClient_NewConsumer(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		got := client.NewConsumer("foo", D(func(context.Context, *Delivery[[]byte]) Action { return Ack }))
-		var err ConsumerError
-		assert.ErrorAs(t, got, &err)
-		assert.Equal(t, ConsumerError{Queue: "foo", Message: "create channel: failed"}, err)
+		queue := "foo"
+		got := client.NewConsumer(queue, D(func(context.Context, *Delivery[[]byte]) Action { return Ack }))
+		assert.Errorf(t, got, "amqpx: queue %q consumer-tag %q: %s", queue, "", "create channel: failed")
 	})
 
 	t.Run("consume error", func(t *testing.T) {
@@ -70,10 +69,9 @@ func TestClient_NewConsumer(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 
-		got := client.NewConsumer("foo", D(func(context.Context, *Delivery[[]byte]) Action { return Ack }))
-		var err ConsumerError
-		assert.ErrorAs(t, got, &err)
-		assert.Equal(t, ConsumerError{Queue: "foo", Message: "consume: failed"}, err)
+		queue := "foo"
+		got := client.NewConsumer(queue, D(func(context.Context, *Delivery[[]byte]) Action { return Ack }))
+		assert.Errorf(t, got, "amqpx: queue %q consumer-tag %q: %s", queue, "", "consume: failed")
 	})
 }
 

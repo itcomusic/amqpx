@@ -2,6 +2,7 @@ package amqpx
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -76,20 +77,20 @@ func (c *Client) NewConsumer(queue string, fn HandlerValue, opts ...ConsumerOpti
 	}
 
 	if err := opt.validate(fn); err != nil {
-		return ConsumerError{Queue: queue, Tag: opt.tag, Message: err.Error()}
+		return fmt.Errorf("amqpx: queue %q consumer-tag %q: %s", queue, opt.tag, err)
 	}
 
 	fn.init(opt.unmarshaler)
 	cons := &consumer{
-		conn:    c.conn,
-		queue:   queue,
-		tag:     opt.tag,
-		opts:    opt.channel,
-		logFunc: c.logger,
-		limit:   semaphore.NewWeighted(int64(opt.concurrency)),
-		wg:      c.wg,
-		fn:      fn.serve,
-		done:    c.done,
+		conn:  c.conn,
+		queue: queue,
+		tag:   opt.tag,
+		opts:  opt.channel,
+		log:   c.logger,
+		limit: semaphore.NewWeighted(int64(opt.concurrency)),
+		wg:    c.wg,
+		fn:    fn.serve,
+		done:  c.done,
 	}
 
 	// wrap the end fn with the hook chain
@@ -101,7 +102,7 @@ func (c *Client) NewConsumer(queue string, fn HandlerValue, opts ...ConsumerOpti
 	}
 
 	if err := cons.initChannel(); err != nil {
-		return cons.newConsumerError(err)
+		return fmt.Errorf("amqpx: queue %q consumer-tag %q: %s", cons.queue, cons.tag, err)
 	}
 	go cons.serve()
 	return nil

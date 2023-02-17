@@ -99,9 +99,9 @@ func SetConnectionName(name string) ClientOption {
 	}
 }
 
-// WithErrLog sets logFunc.
+// WithLog sets log.
 // The default is stdout.
-func WithErrLog(log LogFunc) ClientOption {
+func WithLog(log LogFunc) ClientOption {
 	return func(o *clientOptions) {
 		if o.logger != nil {
 			o.logger = log
@@ -160,9 +160,9 @@ func (c *clientOptions) validate() error {
 
 	if c.dialer == nil {
 		c.dialer = &defaultDialer{
-			URI:     c.uri.String(),
-			Config:  c.config,
-			logFunc: c.logger,
+			URI:    c.uri.String(),
+			Config: c.config,
+			log:    c.logger,
 		}
 	}
 	return nil

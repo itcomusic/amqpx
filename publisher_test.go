@@ -54,10 +54,7 @@ func TestPublisher_Publish(t *testing.T) {
 
 		pub := NewPublisher[[]byte](client, ExchangeDirect, UseRoutingKey("key"))
 		got := pub.Publish(NewPublishing([]byte("hello")))
-
-		var err PublishError
-		assert.ErrorAs(t, got, &err)
-		assert.Equal(t, PublishError{Exchange: ExchangeDirect, RoutingKey: "key", Message: "failed"}, err)
+		assert.Errorf(t, got, "amqpx: exchange %q routing-key %q: %s", ExchangeDirect, "key", "failed")
 	})
 }
 

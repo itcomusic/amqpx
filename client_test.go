@@ -129,7 +129,7 @@ func prep(t *testing.T) (*Client, mock) {
 	}
 
 	client, err := Connect(setDialer(mock.Dialer),
-		WithErrLog(func(err error) { t.Fatal(err) }),
+		WithLog(func(format string, v ...any) { t.Fatalf(format, v...) }),
 		UseUnmarshaler(testUnmarshaler),
 		UseMarshaler(defaultBytesMarshaler))
 	require.NoError(t, err)
