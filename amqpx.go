@@ -33,6 +33,7 @@ type Table = amqp091.Table
 
 // Default exchanges.
 const (
+	ExchangeDefault = ""
 	ExchangeDirect  = "direct"
 	ExchangeFanout  = "fanout"
 	ExchangeHeaders = "headers"

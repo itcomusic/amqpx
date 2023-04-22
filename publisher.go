@@ -23,12 +23,12 @@ type PublishRequest struct {
 
 // A Publishing represents message sending to the server.
 type Publishing[T any] struct {
-	msg T
+	msg *T
 	req *PublishRequest
 }
 
 // NewPublishing creates new publishing.
-func NewPublishing[T any](v T) *Publishing[T] {
+func NewPublishing[T any](v *T) *Publishing[T] {
 	return &Publishing[T]{
 		msg: v,
 		req: &PublishRequest{

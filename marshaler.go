@@ -21,11 +21,15 @@ var defaultBytesMarshaler = &bytesMarshaler{}
 type bytesMarshaler struct{}
 
 func (bytesMarshaler) Marshal(v any) ([]byte, error) {
-	b, ok := v.([]byte)
+	b, ok := v.(*[]byte)
 	if !ok {
 		return nil, fmt.Errorf("amqpx: bytes marshaler: unsupported type %T", v)
 	}
-	return b, nil
+
+	if b == nil {
+		return []byte(nil), nil
+	}
+	return *b, nil
 }
 
 func (bytesMarshaler) ContentType() string {

@@ -53,7 +53,7 @@ func TestPublisher_Publish(t *testing.T) {
 		}
 
 		pub := NewPublisher[[]byte](client, ExchangeDirect, UseRoutingKey("key"))
-		got := pub.Publish(NewPublishing([]byte("hello")))
+		got := pub.Publish(NewPublishing[[]byte](nil))
 		assert.Errorf(t, got, "amqpx: exchange %q routing-key %q: %s", ExchangeDirect, "key", "failed")
 	})
 }
@@ -62,7 +62,8 @@ func TestPublishing_Properties(t *testing.T) {
 	t.Parallel()
 
 	d := time.Now()
-	got := NewPublishing([]byte(nil)).
+	b := []byte(nil)
+	got := NewPublishing(&b).
 		PersistentMode().
 		SetPriority(1).
 		SetCorrelationID("correlation_id_value").
@@ -90,6 +91,7 @@ func TestPublishing_Properties(t *testing.T) {
 				AppId:         "app_id_value",
 			},
 		},
+		msg: &b,
 	}
 	assert.Equal(t, want, got)
 }
