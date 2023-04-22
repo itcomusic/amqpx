@@ -205,7 +205,7 @@ func (c *consumer) makeConnect() (exit bool) {
 		case <-c.done.Done():
 			return true
 
-		case <-time.After(reconnectDelay):
+		case <-time.After(defaultReconnectDelay):
 		}
 	}
 }

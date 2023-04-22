@@ -9,7 +9,11 @@ import (
 )
 
 const (
-	reconnectDelay = time.Second * 4
+	defaultHost           = "localhost"
+	defaultPort           = 5672
+	defaultReconnectDelay = 4 * time.Second
+	defaultHeartbeat      = 10 * time.Second
+	defaultLocale         = "en_US"
 )
 
 //go:generate ./bin/moq -rm -out connection_moq_test.go . Connection
@@ -68,16 +72,16 @@ func (w *amqpConn) Close() error {
 
 var defaultURI = amqp091.URI{
 	Scheme:   "amqp",
-	Host:     "localhost",
-	Port:     5672,
+	Host:     defaultHost,
+	Port:     defaultPort,
 	Username: "guest",
 	Password: "guest",
 	Vhost:    "/",
 }
 
 var defaultConfig = amqp091.Config{
-	Heartbeat:  10 * time.Second,
-	Locale:     "en_US",
+	Heartbeat:  defaultHeartbeat,
+	Locale:     defaultLocale,
 	Properties: amqp091.NewConnectionProperties(),
 }
 
@@ -99,7 +103,7 @@ func (d *defaultDialer) Dial(ctx context.Context) (Connection, error) {
 		case <-ctx.Done():
 			return nil, fmt.Errorf("%s: %w", err, ctx.Err())
 
-		case <-time.After(reconnectDelay):
+		case <-time.After(defaultReconnectDelay):
 		}
 	}
 }

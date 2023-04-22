@@ -62,7 +62,7 @@ func channelMock() *ChannelMock {
 			return make(chan amqp091.Delivery), nil
 		},
 		PublishWithDeferredConfirmWithContextFunc: func(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
-			return nil, nil
+			return &amqp091.DeferredConfirmation{}, nil
 		},
 		NotifyCloseFunc: func(err chan *amqp091.Error) chan *amqp091.Error {
 			return err

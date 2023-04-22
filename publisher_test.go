@@ -46,14 +46,15 @@ func TestPublisher_Publish(t *testing.T) {
 		client, mock := prep(t)
 		defer client.Close()
 
+		b := []byte("hello")
 		mock.Channel.PublishWithDeferredConfirmWithContextFunc = func(ctx context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp091.Publishing) (*amqp091.DeferredConfirmation, error) {
-			assert.Equal(t, []byte("hello"), msg.Body)
+			assert.Equal(t, b, msg.Body)
 			assert.Equal(t, defaultBytesMarshaler.ContentType(), msg.ContentType)
 			return nil, fmt.Errorf("failed")
 		}
 
 		pub := NewPublisher[[]byte](client, ExchangeDirect, UseRoutingKey("key"))
-		got := pub.Publish(NewPublishing[[]byte](nil))
+		got := pub.Publish(NewPublishing[[]byte](&b))
 		assert.Errorf(t, got, "amqpx: exchange %q routing-key %q: %s", ExchangeDirect, "key", "failed")
 	})
 }

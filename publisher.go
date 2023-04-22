@@ -294,7 +294,7 @@ func (p *Publisher[T]) makeConnect() (exit bool) {
 		case <-p.done.Done():
 			return true
 
-		case <-time.After(reconnectDelay):
+		case <-time.After(defaultReconnectDelay):
 		}
 	}
 }
