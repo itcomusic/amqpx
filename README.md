@@ -121,7 +121,7 @@ Predefined support opentelemetry using interceptor.
 
     // can use special interceptor for publisher
     _ = amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.SetPublishInterceptor(func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
-        return func(ctx context.Context, m *amqpx.PublishRequest) error {
+        return func(ctx context.Context, m *amqpx.PublishingRequest) error {
             fmt.Printf("message: %s\n", m.Body)
             return next(m)
         }
