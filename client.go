@@ -27,9 +27,9 @@ type Client struct {
 	done        context.Context
 	cancel      context.CancelFunc
 
-	logger      LogFunc
-	consumeHook []ConsumeHook
-	publishHook []PublishHook
+	logger              LogFunc
+	consumerInterceptor []ConsumeInterceptor
+	publishInterceptor  []PublishInterceptor
 }
 
 // Connect creates a connection.
@@ -69,7 +69,7 @@ func Connect(opts ...ClientOption) (*Client, error) {
 // NewConsumer creates a consumer.
 func (c *Client) NewConsumer(queue string, fn HandlerValue, opts ...ConsumerOption) error {
 	opt := consumerOptions{
-		hook:        c.consumeHook,
+		interceptor: c.consumerInterceptor,
 		unmarshaler: c.unmarshaler,
 	}
 	for _, o := range opts {
@@ -93,11 +93,11 @@ func (c *Client) NewConsumer(queue string, fn HandlerValue, opts ...ConsumerOpti
 		done:  c.done,
 	}
 
-	// wrap the end fn with the hook chain
-	if len(opt.hook) != 0 {
-		cons.fn = opt.hook[len(opt.hook)-1](cons.fn)
-		for i := len(opt.hook) - 2; i >= 0; i-- {
-			cons.fn = opt.hook[i](cons.fn)
+	// wrap the end fn with the interceptor chain.
+	if len(opt.interceptor) != 0 {
+		cons.fn = opt.interceptor[len(opt.interceptor)-1](cons.fn)
+		for i := len(opt.interceptor) - 2; i >= 0; i-- {
+			cons.fn = opt.interceptor[i](cons.fn)
 		}
 	}
 

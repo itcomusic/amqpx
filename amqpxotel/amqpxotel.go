@@ -2,36 +2,14 @@
 package amqpxotel
 
 import (
-	"context"
-
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/trace"
-
-	"github.com/itcomusic/amqpx"
 )
 
-// Consumer returns consume hook that wraps the next.
-func Consumer(tracer trace.Tracer, operationName string) amqpx.ConsumeHook {
-	return func(next amqpx.ConsumeFunc) amqpx.ConsumeFunc {
-		return func(ctx context.Context, req *amqpx.DeliveryRequest) amqpx.Action {
-			spanContext := otel.GetTextMapPropagator().Extract(ctx, table(req.Headers))
-			ctx, span := tracer.Start(ctx, operationName, trace.WithSpanKind(trace.SpanKindConsumer), trace.WithLinks(trace.LinkFromContext(spanContext)))
-			defer span.End()
-			return next(ctx, req)
-		}
-	}
-}
-
-// Publisher returns publish hook that wraps the next.
-func Publisher(tracer trace.Tracer) amqpx.PublishHook {
-	return func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
-		return func(ctx context.Context, m *amqpx.PublishRequest) error {
-			otel.GetTextMapPropagator().Inject(ctx, table(m.Headers))
-			return next(ctx, m)
-		}
-	}
-}
+const (
+	version             = "0.0.1"
+	semanticVersion     = "semver:" + version
+	instrumentationName = "github.com/itcomusic/amqpx/amqpxotel"
+)
 
 type table map[string]any
 

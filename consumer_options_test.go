@@ -62,7 +62,7 @@ func TestConsumerOption(t *testing.T) {
 			queueBind:       &queueBind,
 		},
 		concurrency: 3,
-		hook:        nil,
+		interceptor: nil,
 		unmarshaler: map[string]Unmarshaler{testUnmarshaler.ContentType(): testUnmarshaler},
 	}
 	assert.Equal(t, want, got)

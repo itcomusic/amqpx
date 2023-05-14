@@ -107,7 +107,7 @@ The declare queue, exchange and binding queue.
 
 ### Middleware
 
-Predefined support opentelemetry using hooks.
+Predefined support opentelemetry using interceptor.
 
 ```go
     import (
@@ -116,13 +116,11 @@ Predefined support opentelemetry using hooks.
     )
 
     // global
-    conn, _ := amqpx.Connect(
-        amqpx.UseConsumeHook(amqpxotel.Consumer(otel.Tracer(""), "amqp")),
-        amqpx.UsePublishHook(amqpxotel.Publisher(otel.Tracer(""))))
+    conn, _ := amqpx.Connect(amqpx.UserInterceptor(amqpxotel.NewInterceptor())
     defer conn.Close()
 
-    // special hook
-    _ = amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.SetPublishHook(func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
+    // can use special interceptor for publisher
+    _ = amqpx.NewPublisher[[]byte](conn, amqpx.Direct, amqpx.SetPublishInterceptor(func(next amqpx.PublisherFunc) amqpx.PublisherFunc {
         return func(ctx context.Context, m *amqpx.PublishRequest) error {
             fmt.Printf("message: %s\n", m.Body)
             return next(m)

@@ -6,10 +6,10 @@ import "context"
 type PublisherOption func(*publisherOptions)
 
 type publisherOptions struct {
-	confirm   bool
-	publish   publishOptions
-	marshaler Marshaler
-	hook      []PublishHook
+	confirm     bool
+	publish     publishOptions
+	marshaler   Marshaler
+	interceptor []PublishInterceptor
 }
 
 func (p *publisherOptions) validate() error {
@@ -29,10 +29,10 @@ func SetConfirmMode() PublisherOption {
 	}
 }
 
-// SetPublishHook sets publish hook.
-func SetPublishHook(h ...PublishHook) PublisherOption {
+// SetPublishInterceptor sets publish interceptor.
+func SetPublishInterceptor(i ...PublishInterceptor) PublisherOption {
 	return func(o *publisherOptions) {
-		o.hook = append(o.hook, h...)
+		o.interceptor = append(o.interceptor, i...)
 	}
 }
 

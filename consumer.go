@@ -19,7 +19,7 @@ type Acknowledger interface {
 	Reject(tag uint64, requeue bool) error
 }
 
-type ConsumeHook func(ConsumeFunc) ConsumeFunc
+type ConsumeInterceptor func(ConsumeFunc) ConsumeFunc
 
 type ConsumeFunc func(ctx context.Context, req *DeliveryRequest) Action
 

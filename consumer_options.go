@@ -13,7 +13,7 @@ type consumerOptions struct {
 	tag         string
 	channel     channelOptions
 	concurrency int
-	hook        []ConsumeHook
+	interceptor []ConsumeInterceptor
 	unmarshaler map[string]Unmarshaler
 }
 
@@ -98,10 +98,10 @@ func SetConcurrency(i int) ConsumerOption {
 	}
 }
 
-// SetConsumeHook sets consume hook.
-func SetConsumeHook(h ...ConsumeHook) ConsumerOption {
+// SetConsumeInterceptor sets consume interceptor.
+func SetConsumeInterceptor(i ...ConsumeInterceptor) ConsumerOption {
 	return func(o *consumerOptions) {
-		o.hook = append(o.hook, h...)
+		o.interceptor = append(o.interceptor, i...)
 	}
 }
 

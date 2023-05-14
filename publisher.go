@@ -10,13 +10,13 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-type PublishHook func(PublisherFunc) PublisherFunc
+type PublishInterceptor func(PublishFunc) PublishFunc
 
-// PublisherFunc is func used for publish message.
-type PublisherFunc func(context.Context, *PublishRequest) error
+// PublishFunc is func used for publish message.
+type PublishFunc func(context.Context, *PublishingRequest) error
 
-// A PublishRequest represents a request to publish a message.
-type PublishRequest struct {
+// A PublishingRequest represents a request to publish a message.
+type PublishingRequest struct {
 	amqp091.Publishing
 	opts publishOptions
 }
@@ -24,14 +24,14 @@ type PublishRequest struct {
 // A Publishing represents message sending to the server.
 type Publishing[T any] struct {
 	msg *T
-	req *PublishRequest
+	req *PublishingRequest
 }
 
 // NewPublishing creates new publishing.
 func NewPublishing[T any](v *T) *Publishing[T] {
 	return &Publishing[T]{
 		msg: v,
-		req: &PublishRequest{
+		req: &PublishingRequest{
 			Publishing: amqp091.Publishing{Headers: make(amqp091.Table)},
 		},
 	}
@@ -105,7 +105,7 @@ type Publisher[T any] struct {
 	notifyAMQPCancel chan string
 	exchange         string
 	confirm          bool
-	publishExec      PublisherFunc
+	publishExec      PublishFunc
 
 	marshaler      Marshaler
 	publishOptions publishOptions
@@ -118,8 +118,8 @@ type Publisher[T any] struct {
 // NewPublisher creates a publisher.
 func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOption) *Publisher[T] {
 	opt := &publisherOptions{
-		marshaler: client.marshaler,
-		hook:      client.publishHook,
+		marshaler:   client.marshaler,
+		interceptor: client.publishInterceptor,
 		publish: publishOptions{
 			ctx: context.Background(),
 		},
@@ -157,12 +157,12 @@ func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOptio
 	}
 	pub.done, pub.cancel = context.WithCancel(client.done)
 
-	// wrap the end fn with the hook chain
+	// wrap the end fn with the interceptor chain
 	pub.publishExec = pub.publish
-	if len(opt.hook) != 0 {
-		pub.publishExec = opt.hook[len(opt.hook)-1](pub.publishExec)
-		for i := len(opt.hook) - 2; i >= 0; i-- {
-			pub.publishExec = opt.hook[i](pub.publishExec)
+	if len(opt.interceptor) != 0 {
+		pub.publishExec = opt.interceptor[len(opt.interceptor)-1](pub.publishExec)
+		for i := len(opt.interceptor) - 2; i >= 0; i-- {
+			pub.publishExec = opt.interceptor[i](pub.publishExec)
 		}
 	}
 
@@ -196,7 +196,7 @@ func (p *Publisher[T]) Publish(m *Publishing[T], opts ...PublishOption) error {
 	return p.publishExec(m.req.opts.ctx, m.req)
 }
 
-func (p *Publisher[T]) publish(ctx context.Context, m *PublishRequest) error {
+func (p *Publisher[T]) publish(ctx context.Context, m *PublishingRequest) error {
 	channel := p.amqpChannel.Load()
 	if channel == nil {
 		return p.newPublishError(m.opts.key, errChannelClosed)

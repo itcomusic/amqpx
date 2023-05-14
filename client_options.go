@@ -10,6 +10,11 @@ import (
 
 type Config = amqp091.Config
 
+type Interceptor interface {
+	WrapConsume(ConsumeFunc) ConsumeFunc
+	WrapPublish(PublishFunc) PublishFunc
+}
+
 // ClientOption is used to configure a client.
 type ClientOption func(*clientOptions)
 
@@ -19,8 +24,8 @@ type clientOptions struct {
 
 	marshaler   Marshaler
 	unmarshaler map[string]Unmarshaler
-	consumeHook []ConsumeHook
-	publishHook []PublishHook
+	wrapConsume []ConsumeInterceptor
+	wrapPublish []PublishInterceptor
 	logger      LogFunc
 
 	dialer dialer
@@ -109,17 +114,14 @@ func WithLog(log LogFunc) ClientOption {
 	}
 }
 
-// UseConsumeHook sets consumer hook.
-func UseConsumeHook(h ...ConsumeHook) ClientOption {
+// UseInterceptor sets interceptors.
+func UseInterceptor(i ...Interceptor) ClientOption {
 	return func(o *clientOptions) {
-		o.consumeHook = append(o.consumeHook, h...)
-	}
-}
+		for _, v := range i {
+			o.wrapConsume = append(o.wrapConsume, v.WrapConsume)
+			o.wrapPublish = append(o.wrapPublish, v.WrapPublish)
+		}
 
-// UsePublishHook sets publish hook.
-func UsePublishHook(h ...PublishHook) ClientOption {
-	return func(o *clientOptions) {
-		o.publishHook = append(o.publishHook, h...)
 	}
 }
 

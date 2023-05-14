@@ -77,7 +77,7 @@ func TestPublishing_Properties(t *testing.T) {
 		SetAppID("app_id_value")
 
 	want := &Publishing[[]byte]{
-		req: &PublishRequest{
+		req: &PublishingRequest{
 			Publishing: amqp091.Publishing{
 				Headers:       amqp091.Table{},
 				DeliveryMode:  Persistent,
