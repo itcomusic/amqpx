@@ -3,7 +3,7 @@ module github.com/itcomusic/amqpx/tools
 go 1.19
 
 require (
-	github.com/matryer/moq v0.3.0
+	github.com/matryer/moq v0.3.2
 	golang.org/x/tools v0.3.0
 )
 

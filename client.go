@@ -27,9 +27,9 @@ type Client struct {
 	done        context.Context
 	cancel      context.CancelFunc
 
-	logger              LogFunc
-	consumerInterceptor []ConsumeInterceptor
-	publishInterceptor  []PublishInterceptor
+	logger      LogFunc
+	wrapConsume []ConsumeInterceptor
+	wrapPublish []PublishInterceptor
 }
 
 // Connect creates a connection.
@@ -59,6 +59,8 @@ func Connect(opts ...ClientOption) (*Client, error) {
 		notifyClose: amqpConn.NotifyClose(make(chan *amqp091.Error, 1)),
 		wg:          &sync.WaitGroup{},
 		logger:      opt.logger,
+		wrapConsume: opt.wrapConsume,
+		wrapPublish: opt.wrapPublish,
 	}
 	conn.done, conn.cancel = context.WithCancel(context.Background())
 	go conn.loop()
@@ -69,7 +71,7 @@ func Connect(opts ...ClientOption) (*Client, error) {
 // NewConsumer creates a consumer.
 func (c *Client) NewConsumer(queue string, fn HandlerValue, opts ...ConsumerOption) error {
 	opt := consumerOptions{
-		interceptor: c.consumerInterceptor,
+		interceptor: c.wrapConsume,
 		unmarshaler: c.unmarshaler,
 	}
 	for _, o := range opts {

@@ -34,9 +34,9 @@ type Table = amqp091.Table
 // Default exchanges.
 const (
 	ExchangeDefault = ""
-	ExchangeDirect  = "direct"
-	ExchangeFanout  = "fanout"
-	ExchangeHeaders = "headers"
-	ExchangeMatch   = "match"
-	ExchangeTopic   = "topic"
+	ExchangeDirect  = "amq.direct"
+	ExchangeFanout  = "amq.fanout"
+	ExchangeHeaders = "amq.headers"
+	ExchangeMatch   = "amq.match"
+	ExchangeTopic   = "amq.topic"
 )

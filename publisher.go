@@ -12,7 +12,7 @@ import (
 
 type PublishInterceptor func(PublishFunc) PublishFunc
 
-// PublishFunc is func used for publish message.
+// PublishFunc is func used for publish a message.
 type PublishFunc func(context.Context, *PublishingRequest) error
 
 // A PublishingRequest represents a request to publish a message.
@@ -21,7 +21,25 @@ type PublishingRequest struct {
 	opts publishOptions
 }
 
-// A Publishing represents message sending to the server.
+// NewFrom using from only tests.
+func (p *PublishingRequest) NewFrom(exchange, routingKey string) *PublishingRequest {
+	opts := p.opts
+	opts.exchange = exchange
+	opts.key = routingKey
+	return &PublishingRequest{Publishing: p.Publishing, opts: opts}
+}
+
+// Exchange returns exchange name.
+func (p *PublishingRequest) Exchange() string {
+	return p.opts.exchange
+}
+
+// RoutingKey returns routing key.
+func (p *PublishingRequest) RoutingKey() string {
+	return p.opts.key
+}
+
+// A Publishing represents a message sending to the server.
 type Publishing[T any] struct {
 	msg *T
 	req *PublishingRequest
@@ -97,7 +115,7 @@ func (m *Publishing[T]) SetAppID(id string) *Publishing[T] {
 	return m
 }
 
-// A Publisher represents client for sending the messages.
+// A Publisher represents a client for sending the messages.
 type Publisher[T any] struct {
 	amqpChannel      atomic.Pointer[Channel]
 	conn             func() Connection
@@ -119,7 +137,7 @@ type Publisher[T any] struct {
 func NewPublisher[T any](client *Client, exchange string, opts ...PublisherOption) *Publisher[T] {
 	opt := &publisherOptions{
 		marshaler:   client.marshaler,
-		interceptor: client.publishInterceptor,
+		interceptor: client.wrapPublish,
 		publish: publishOptions{
 			ctx: context.Background(),
 		},
@@ -192,6 +210,7 @@ func (p *Publisher[T]) Publish(m *Publishing[T], opts ...PublishOption) error {
 	}
 	m.req.Body = b
 	m.req.ContentType = p.marshaler.ContentType()
+	m.req.opts.exchange = p.exchange
 
 	return p.publishExec(m.req.opts.ctx, m.req)
 }
@@ -202,7 +221,7 @@ func (p *Publisher[T]) publish(ctx context.Context, m *PublishingRequest) error 
 		return p.newPublishError(m.opts.key, errChannelClosed)
 	}
 
-	confirm, err := (*channel).PublishWithDeferredConfirmWithContext(ctx, p.exchange, m.opts.key, m.opts.mandatory, m.opts.immediate, m.Publishing)
+	confirm, err := (*channel).PublishWithDeferredConfirmWithContext(ctx, m.opts.exchange, m.opts.key, m.opts.mandatory, m.opts.immediate, m.Publishing)
 	if err != nil {
 		return p.newPublishError(m.opts.key, err)
 	}

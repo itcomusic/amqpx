@@ -30,11 +30,11 @@ func NewInterceptor(opts ...Option) *Interceptor {
 
 func (i *Interceptor) WrapConsume(next amqpx.ConsumeFunc) amqpx.ConsumeFunc {
 	return func(ctx context.Context, req *amqpx.DeliveryRequest) amqpx.Action {
-		if req.ContentEncoding != headerGZIP {
+		if req.ContentEncoding() != headerGZIP {
 			return next(ctx, req)
 		}
 
-		r, err := gzip.NewReader(bytes.NewReader(req.Body))
+		r, err := gzip.NewReader(bytes.NewReader(req.Body()))
 		if err != nil {
 			req.Log("[ERROR] amqpxgzip: init reader: %s", err)
 			return amqpx.Reject
@@ -47,20 +47,20 @@ func (i *Interceptor) WrapConsume(next amqpx.ConsumeFunc) amqpx.ConsumeFunc {
 			return amqpx.Reject
 		}
 
-		req.Body = body
+		req.SetBody(body)
 		return next(ctx, req)
 	}
 }
 
 func (i *Interceptor) WrapPublish(next amqpx.PublishFunc) amqpx.PublishFunc {
-	return func(ctx context.Context, m *amqpx.PublishingRequest) error {
+	return func(ctx context.Context, req *amqpx.PublishingRequest) error {
 		buf := &bytes.Buffer{}
 		w, err := gzip.NewWriterLevel(buf, i.config.level)
 		if err != nil {
 			return fmt.Errorf("amqpxgzip: init writer: %w", err)
 		}
 
-		if _, err := w.Write(m.Body); err != nil {
+		if _, err := w.Write(req.Body); err != nil {
 			return fmt.Errorf("amqpxgzip: write: %w", err)
 		}
 
@@ -68,8 +68,8 @@ func (i *Interceptor) WrapPublish(next amqpx.PublishFunc) amqpx.PublishFunc {
 			return fmt.Errorf("amqpxgzip: close: %w", err)
 		}
 
-		m.ContentEncoding = headerGZIP
-		m.Body = buf.Bytes()
-		return next(ctx, m)
+		req.ContentEncoding = headerGZIP
+		req.Body = buf.Bytes()
+		return next(ctx, req)
 	}
 }

@@ -87,7 +87,7 @@ func TestDeliveryRequest_setStatus(t *testing.T) {
 			},
 		}
 
-		d := &DeliveryRequest{acknowledger: ackMock}
+		d := &DeliveryRequest{in: &amqp091.Delivery{Acknowledger: ackMock}}
 		require.NoError(t, d.setStatus(Ack))
 		assert.Equal(t, 1, len(ackMock.AckCalls()))
 	})
@@ -101,7 +101,7 @@ func TestDeliveryRequest_setStatus(t *testing.T) {
 			},
 		}
 
-		d := &DeliveryRequest{acknowledger: ackMock}
+		d := &DeliveryRequest{in: &amqp091.Delivery{Acknowledger: ackMock}}
 		require.NoError(t, d.setStatus(Nack))
 		assert.Equal(t, 1, len(ackMock.NackCalls()))
 	})
@@ -115,7 +115,7 @@ func TestDeliveryRequest_setStatus(t *testing.T) {
 			},
 		}
 
-		d := &DeliveryRequest{acknowledger: ackMock}
+		d := &DeliveryRequest{in: &amqp091.Delivery{Acknowledger: ackMock}}
 		require.NoError(t, d.setStatus(Reject))
 		assert.Equal(t, 1, len(ackMock.RejectCalls()))
 	})
@@ -162,11 +162,16 @@ func TestDeliveryStruct(t *testing.T) {
 	var call bool
 	fn := D[Gopher](func(ctx context.Context, got *Delivery[Gopher]) Action {
 		call = true
-		assert.Equal(t, &Delivery[Gopher]{Msg: &Gopher{Name: "gopher"}, Req: &DeliveryRequest{Body: nil, ContentType: testUnmarshaler.ContentType()}}, got)
+		assert.Equal(t, &Delivery[Gopher]{Msg: &Gopher{Name: "gopher"}, Req: &DeliveryRequest{
+			in: &amqp091.Delivery{Body: nil, ContentType: testUnmarshaler.ContentType()},
+		}}, got)
 		return Ack
 	})
 	fn.init(map[string]Unmarshaler{testUnmarshaler.ContentType(): testUnmarshaler})
-	got := fn.serve(context.Background(), &DeliveryRequest{Body: []byte(`{"name":"gopher"}`), ContentType: testUnmarshaler.ContentType()})
+	got := fn.serve(context.Background(), &DeliveryRequest{in: &amqp091.Delivery{
+		Body:        []byte(`{"name":"gopher"}`),
+		ContentType: testUnmarshaler.ContentType()},
+	})
 	assert.Equal(t, true, call)
 	assert.Equal(t, Ack, got)
 }

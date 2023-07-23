@@ -33,7 +33,7 @@ func main() {
 		}
 
 		_ = conn.NewConsumer("bar", amqpx.D(func(ctx context.Context, req *amqpx.Delivery[Gopher]) amqpx.Action {
-			fmt.Printf("user-id: %s, received message: %s\n", req.Req.UserID, req.Msg.Name)
+			fmt.Printf("user-id: %s, received message: %s\n", req.Req.UserID(), req.Msg.Name)
 			return amqpx.Ack
 		}), amqpx.SetUnmarshaler(amqpxjson.Unmarshaler), amqpx.SetAutoAckMode()) // individual single unmarshaler
 	}

@@ -51,22 +51,22 @@ func (v *handleValue[T]) init(m map[string]Unmarshaler) {
 
 func (v *handleValue[T]) serve(ctx context.Context, req *DeliveryRequest) Action {
 	if v.bytesMsg {
-		return v.fn(ctx, &Delivery[T]{Msg: any(&req.Body).(*T), Req: req})
+		return v.fn(ctx, &Delivery[T]{Msg: any(&req.in.Body).(*T), Req: req})
 	}
 
-	u, ok := v.unmarshaler[req.ContentType]
+	u, ok := v.unmarshaler[req.in.ContentType]
 	if !ok {
 		req.log("[ERROR] %s: %s", req.info(), errUnmarshalerNotFound)
 		return Reject
 	}
 
 	value := new(T)
-	if err := u.Unmarshal(req.Body, value); err != nil {
+	if err := u.Unmarshal(req.in.Body, value); err != nil {
 		req.log("[ERROR] %s: %s", req.info(), fmt.Errorf("has an error trying to unmarshal: %w", err))
 		return Reject
 	}
 
-	req.Body = nil
+	req.in.Body = nil
 	return v.fn(ctx, newDelivery(value, req))
 }
 
@@ -140,7 +140,7 @@ func (c *consumer) initChannel() error {
 		return fmt.Errorf("qos: %w", err)
 	}
 
-	// close old channel
+	// close an old channel
 	if c.channel != nil {
 		c.channel.Close()
 	}

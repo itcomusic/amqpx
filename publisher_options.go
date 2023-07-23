@@ -81,6 +81,7 @@ type PublishOption func(*publishOptions)
 
 type publishOptions struct {
 	key       string
+	exchange  string
 	mandatory bool
 	immediate bool
 	ctx       context.Context

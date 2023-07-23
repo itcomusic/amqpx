@@ -3,20 +3,33 @@ package amqpxotel
 import (
 	"context"
 
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/itcomusic/amqpx"
 )
 
+type (
+	consumeFilter   func(context.Context, *amqpx.DeliveryRequest) bool
+	publishFilter   func(context.Context, *amqpx.PublishingRequest) bool
+	consumeSpanName func(context.Context, *amqpx.DeliveryRequest) string
+	publishSpanName func(context.Context, *amqpx.PublishingRequest) string
+	ackStatus       func(amqpx.Action) (code codes.Code, description string)
+)
+
 type config struct {
-	consumeFilter func(context.Context, *amqpx.DeliveryRequest) bool
-	operationName func(context.Context, *amqpx.DeliveryRequest) string
-	tracer        trace.Tracer
-	propagator    propagation.TextMapPropagator
+	tracer          trace.Tracer
+	propagator      propagation.TextMapPropagator
+	consumeFilter   consumeFilter
+	publishFilter   publishFilter
+	consumeSpanName consumeSpanName
+	publishSpanName publishSpanName
+	ackStatus       ackStatus
+	notTrustRemote  bool
 }
 
-// An Option configures the OpenTelemetry instrumentation.
+// An Option configuring the OpenTelemetry instrumentation.
 type Option func(*config)
 
 // WithPropagator configures the instrumentation to use the supplied propagator
@@ -44,7 +57,7 @@ func WithTracerProvider(provider trace.TracerProvider) Option {
 	}
 }
 
-// WithConsumeFilter configures the instrumentation to emit traces when the filter function returns true.
+// WithConsumeFilter configures the Interceptor to emit traces when the filter function returns true.
 func WithConsumeFilter(filter func(context.Context, *amqpx.DeliveryRequest) bool) Option {
 	return func(c *config) {
 		if filter != nil {
@@ -53,11 +66,56 @@ func WithConsumeFilter(filter func(context.Context, *amqpx.DeliveryRequest) bool
 	}
 }
 
-// WithOperationName configures the traces with the operation name.
-func WithOperationName(operationName func(context.Context, *amqpx.DeliveryRequest) string) Option {
+// WithPublishFilter configures the Interceptor to emit traces when the filter function returns true.
+func WithPublishFilter(filter func(context.Context, *amqpx.PublishingRequest) bool) Option {
 	return func(c *config) {
-		if operationName != nil {
-			c.operationName = operationName
+		if filter != nil {
+			c.publishFilter = filter
 		}
 	}
+}
+
+// WithConsumeSpanName configures the Interceptor to span name.
+func WithConsumeSpanName(operationName func(context.Context, *amqpx.DeliveryRequest) string) Option {
+	return func(c *config) {
+		if operationName != nil {
+			c.consumeSpanName = operationName
+		}
+	}
+}
+
+// WithPublishSpanName configures the Interceptor span name.
+func WithPublishSpanName(operationName func(context.Context, *amqpx.PublishingRequest) string) Option {
+	return func(c *config) {
+		if operationName != nil {
+			c.publishSpanName = operationName
+		}
+	}
+}
+
+// WithAckStatus configures the Interceptor to handle the acknowledgment status.
+// By default, amqpx.Ack sets codes.Ok and other codes.Unset.
+func WithAckStatus(ackStatus func(amqpx.Action) (code codes.Code, description string)) Option {
+	return func(c *config) {
+		if ackStatus != nil {
+			c.ackStatus = ackStatus
+		}
+	}
+}
+
+// WithNotTrustRemote sets the Interceptor to not trust remote spans.
+// By default, all incoming spans are trusted and will be a child span.
+// When WithNotTrustRemote is used, all incoming spans are untrusted and will be linked
+// with a [trace.Link] and will not be a child span.
+func WithNotTrustRemote() Option {
+	return func(c *config) {
+		c.notTrustRemote = true
+	}
+}
+
+func defaultAckStatus(action amqpx.Action) (code codes.Code, description string) {
+	if amqpx.Ack == action {
+		return codes.Ok, ""
+	}
+	return codes.Unset, ""
 }

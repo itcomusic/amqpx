@@ -23,10 +23,10 @@ func TestInterceptor(t *testing.T) {
 			return amqpx.Ack
 		})
 
-		req := &amqpx.DeliveryRequest{ContentEncoding: headerGZIP, Body: testGZIPBody}
+		req := (&amqpx.DeliveryRequest{}).NewFrom(&amqp091.Delivery{ContentEncoding: headerGZIP, Body: testGZIPBody})
 		status := fn(context.Background(), req)
 		assert.Equal(t, amqpx.Ack, status)
-		assert.Equal(t, []byte("gopher"), req.Body)
+		assert.Equal(t, []byte("gopher"), req.Body())
 	})
 
 	t.Run("publish", func(t *testing.T) {
