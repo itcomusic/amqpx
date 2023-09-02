@@ -1,6 +1,6 @@
 module github.com/itcomusic/amqpx/_example
 
-go 1.19
+go 1.20
 
 replace github.com/itcomusic/amqpx => ../.
 
@@ -24,6 +24,6 @@ require (
 	go.opentelemetry.io/otel v1.16.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
-	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
+	golang.org/x/sync v0.3.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 )
