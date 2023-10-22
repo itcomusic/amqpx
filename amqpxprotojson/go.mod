@@ -2,10 +2,8 @@ module github.com/itcomusic/amqpx/amqpxprotojson
 
 go 1.20
 
-replace github.com/itcomusic/amqpx => ../.
-
 require (
-	github.com/itcomusic/amqpx v0.2.0
+	github.com/itcomusic/amqpx v0.3.1
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/protobuf v1.31.0
 )
