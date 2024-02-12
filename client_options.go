@@ -73,6 +73,13 @@ func SetHost(h string) ClientOption {
 	}
 }
 
+// SetVHost sets vhost.
+func SetVHost(vhost string) ClientOption {
+	return func(o *clientOptions) {
+		o.uri.Vhost = vhost
+	}
+}
+
 // SetAuth sets auth username and password.
 func SetAuth(username, password string) ClientOption {
 	return func(o *clientOptions) {

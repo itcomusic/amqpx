@@ -16,6 +16,7 @@ func TestClientOption(t *testing.T) {
 	for _, o := range []ClientOption{
 		SetConnectionName("connection_name"),
 		SetHost("host_value:8080"),
+		SetVHost("vhost_value"),
 		SetAuth("username_value", "pass_value"),
 		SetTLSConfig(&tls.Config{InsecureSkipVerify: false, MinVersion: tls.VersionTLS12}),
 		IsTLS(true),
@@ -27,6 +28,7 @@ func TestClientOption(t *testing.T) {
 
 	want := newClientOptions()
 	want.uri.Host = "host_value"
+	want.uri.Vhost = "vhost_value"
 	want.uri.Port = 8080
 	want.uri.Username = "username_value"
 	want.uri.Password = "pass_value"
