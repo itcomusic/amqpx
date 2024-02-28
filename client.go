@@ -68,6 +68,13 @@ func Connect(opts ...ClientOption) (*Client, error) {
 	return conn, nil
 }
 
+// IsConnOpen returns true if the connection is open.
+func (c *Client) IsConnOpen() bool {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
+	return !c.amqpConn.IsClosed()
+}
+
 // NewConsumer creates a consumer.
 func (c *Client) NewConsumer(queue string, fn HandlerValue, opts ...ConsumerOption) error {
 	opt := consumerOptions{
